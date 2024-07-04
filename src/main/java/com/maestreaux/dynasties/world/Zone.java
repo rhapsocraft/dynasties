@@ -5,6 +5,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -14,61 +15,87 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 public class Zone {
-    //public static Zone TEST_ZONE = new Zone(new BlockPos(0, 0, 0));
-    private BlockPos zoneCenter;
-    private AABB zoneAABB;
+    private BlockPos center;
+    private AABB boundingBox;
     private final List<Plot> plots = new ArrayList<>();
-    private final Level level;
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
+    private final Level level;
+    private final ResourceKey<Level> dimension;
+    public static List<Zone> ZONES = new ArrayList<>();
 
-    public Zone(ServerLevel level) {
-        this.level = level;
+    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension) {
+        this.level = null;
+        this.dimension = dimension;
+        this.uuid = uuid;
+        this.setCenter(center);
     }
 
-    public Zone(ServerLevel level, BlockPos center) {
+    public Zone(Level level) {
+        this.level = level;
+        this.dimension = level.dimension();
+    }
+
+    public Zone(Level level, BlockPos center) {
         this(level);
         this.setCenter(center);
     }
 
     public static Zone getContainerZone(ServerLevel level, Vec3i pos) {
-        var zoneMatch = ZoneSavedData.getZones(level).stream().filter((zone) -> zone.getZoneAABB().contains(pos.getX(), pos.getY(), pos.getZ())).findFirst();
+        var zoneMatch = ZoneSavedData.getZones(level).stream().filter((zone) -> zone.getBoundingBox().contains(pos.getX(), pos.getY(), pos.getZ())).findFirst();
         return zoneMatch.orElse(null);
     }
 
-    public static void addZone(ServerLevel level, Zone newZone) {
+    public static void add(ServerLevel level, Zone newZone) {
         ZoneSavedData.addZone(level, newZone);
     }
 
-    public static void getZones(ServerLevel level) {
-        ZoneSavedData.getZones(level);
+    public static List<Zone> getZones(ServerLevel level) {
+        return ZoneSavedData.getZones(level);
+    }
+
+    public static void setZones(List<Zone> newZones) {
+        ZONES = newZones;
+    }
+
+    public static List<Zone> getZones() {
+        return ZONES;
     }
 
     public void setCenter(BlockPos newCenter) {
-        if (!this.level.isClientSide()) {
-            this.zoneCenter = newCenter;
-            var startPos = this.zoneCenter.subtract(new Vec3i(16, 4,  16));
-            var endPos = this.zoneCenter.subtract(new Vec3i(-16, -12, -16));
-            this.zoneAABB = new AABB(startPos, endPos);
-        }
+            this.center = newCenter;
+            var startPos = this.center.subtract(new Vec3i(16, 4,  16));
+            var endPos = this.center.subtract(new Vec3i(-16, -12, -16));
+            this.boundingBox = new AABB(startPos, endPos);
+    }
+
+    public Level level() {
+        return this.level;
+    }
+
+    public ResourceKey<Level> dimension() {
+        return this.dimension;
     }
 
     public BlockPos getCenter() {
-        return this.zoneCenter;
+        return this.center;
     }
 
     public UUID getUUID() {
         return this.uuid;
     }
 
+    public void setUUID(UUID uuid) {
+        this.uuid = uuid;
+    }
+
     public void addPlot(BlockPos startPos, BlockPos endPos) {
-        if (!this.level.isClientSide()) {
-            this.plots.add(new Plot(startPos.subtract(this.zoneCenter), endPos.subtract(this.zoneCenter)));
-        }
+        this.plots.add(new Plot(startPos.subtract(this.center), endPos.subtract(this.center)));
     }
 
     public List<Plot> getPlots() {
@@ -79,8 +106,8 @@ public class Zone {
         this.plots.clear();
     }
 
-    public AABB getZoneAABB() {
-        return this.zoneAABB;
+    public AABB getBoundingBox() {
+        return this.boundingBox;
     }
 
     public CompoundTag nbtWritePlot(CompoundTag compoundTag, Plot plot) {
@@ -97,8 +124,8 @@ public class Zone {
         return new Plot(plotStartPos, plotEndPos);
     }
 
-    public void save(CompoundTag compoundTag) {
-        compoundTag.put("villagerdynasties:zone_center", NbtUtils.writeBlockPos(this.zoneCenter));
+    public CompoundTag save(CompoundTag compoundTag) {
+        compoundTag.put("villagerdynasties:zone_center", NbtUtils.writeBlockPos(this.center));
 
         var plotList = new ListTag();
 
@@ -109,6 +136,8 @@ public class Zone {
 
         compoundTag.putUUID("villagerdynasties:zone_uuid", this.uuid);
         compoundTag.put("villagerdynasties:zone_plots", plotList);
+
+        return compoundTag;
     }
 
     public void load(CompoundTag compoundTag) {
@@ -146,8 +175,11 @@ public class Zone {
     }
 
     public static class ZoneSavedData extends SavedData {
-        private ServerLevel level;
         private final List<Zone> zones = new ArrayList<>();
+
+        public ZoneSavedData() {
+        }
+
         public static ZoneSavedData create() {
             return new ZoneSavedData();
         }
@@ -155,7 +187,7 @@ public class Zone {
         public static void addZone(ServerLevel level, Zone zone) {
             var instance = getInstance(level);
             instance.zones.add(zone);
-            instance.setDirty();
+            instance.save();
         }
 
         public static List<Zone> getZones(ServerLevel level) {
@@ -163,22 +195,14 @@ public class Zone {
             return instance.zones;
         }
 
-        public ServerLevel getLevel() {
-            return this.level;
-        }
-
-        public void setLevel(ServerLevel level) {
-            this.level = level;
-        }
-
-        public static ZoneSavedData load(CompoundTag compoundTag) {
+        public static ZoneSavedData load(ServerLevel level, CompoundTag compoundTag) {
             ZoneSavedData data = create();
 
             var zonesTag = (ListTag) compoundTag.get("villagerdynasties:zones");
 
-            if (zonesTag != null && data.level != null) {
+            if (zonesTag != null) {
                 for (int i = 0; i < zonesTag.size(); i++) {
-                    var newZone = new Zone(data.level);
+                    var newZone = new Zone(level);
                     newZone.load(zonesTag.getCompound(i));
                     data.zones.add(newZone);
                 }
@@ -207,12 +231,7 @@ public class Zone {
         }
 
         public static ZoneSavedData getInstance(ServerLevel serverLevel) {
-            return serverLevel.getDataStorage().computeIfAbsent(ZoneSavedData::load, () -> {
-                var zoneSavedData = ZoneSavedData.create();
-                zoneSavedData.setLevel(serverLevel);
-
-                return zoneSavedData;
-            }, "zone");
+            return serverLevel.getDataStorage().computeIfAbsent(((compoundTag) -> ZoneSavedData.load(serverLevel, compoundTag)), ZoneSavedData::create, "zone");
         }
     }
 }

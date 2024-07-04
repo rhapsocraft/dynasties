@@ -1,8 +1,10 @@
 package com.maestreaux.dynasties;
 
+import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.world.Zone;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -58,6 +60,8 @@ public class DynastiesMod
         LOGGER.info(Config.magicNumberIntroduction + Config.magicNumber);
 
         Config.items.forEach((item) -> LOGGER.info("ITEM >> {}", item.toString()));
+
+        event.enqueueWork(PacketHandler::register);
     }
 
     private void clientSetup(final FMLClientSetupEvent event)
@@ -66,13 +70,18 @@ public class DynastiesMod
 
     @SubscribeEvent
     public static void onItemUse(PlayerInteractEvent.RightClickBlock event) {
-        if (!event.getLevel().isClientSide() && event.getItemStack().is(ModItems.DEBUG_TOOL.get())) {
+        if (!event.getLevel().isClientSide()) {
             var serverLevel = (ServerLevel) event.getLevel();
-            var hitPos = event.getHitVec().getBlockPos();
-            var level = event.getLevel();
-            var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ?  hitPos.above() : hitPos;
 
-            Zone.addZone(serverLevel, new Zone(serverLevel, position));
+            if (event.getItemStack().is(ModItems.DEBUG_TOOL.get())) {
+                var hitPos = event.getHitVec().getBlockPos();
+                var level = event.getLevel();
+                var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ?  hitPos.above() : hitPos;
+
+                Zone.add(serverLevel, new Zone(serverLevel, position));
+            } else if (event.getItemStack().is(Items.STICK)) {
+                Zone.getZones(serverLevel);
+            }
         }
     }
 

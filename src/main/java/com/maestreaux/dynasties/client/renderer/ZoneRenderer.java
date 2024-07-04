@@ -52,7 +52,7 @@ public class ZoneRenderer {
     }
 
     public static void drawZoneHighlight(PoseStack matrixStack, Camera camEntity, ClientLevel level, Zone zone) {
-        var surfaces = getZoneSurfaces(zone.getZoneAABB().deflate(0.5), level);
+        var surfaces = getZoneSurfaces(zone.getBoundingBox().deflate(0.5), level);
 
         for (Vec3i surface: surfaces) {
             drawZoneSquare(matrixStack, camEntity, surface);
@@ -67,8 +67,8 @@ public class ZoneRenderer {
         matrixStack.pushPose();
         Vec3 cam = camera.getPosition();
         matrixStack.translate(-cam.x, -cam.y, -cam.z); // because we start at 0,0,0 relative to camera
-        LevelRenderer.renderLineBox(matrixStack, vertexConsumer, zone.getZoneAABB(), 15.9f, 15.9f, 15.9f, 15.5f);
-        LevelRenderer.renderLineBox(matrixStack, vertexConsumer, zone.getZoneAABB().inflate(8F), 15, 0F, 0F, 15.5f);
+        LevelRenderer.renderLineBox(matrixStack, vertexConsumer, zone.getBoundingBox(), 15.9f, 15.9f, 15.9f, 15.5f);
+        LevelRenderer.renderLineBox(matrixStack, vertexConsumer, zone.getBoundingBox().inflate(8F), 15, 0F, 0F, 15.5f);
         matrixStack.popPose();
 
         buffer.endBatch(RenderType.lines());
@@ -113,7 +113,8 @@ public class ZoneRenderer {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
             var level = Minecraft.getInstance().level;
 
-            for(var zone: ) {
+            // TODO: Zones by Level
+            for(var zone: Zone.getZones()) {
                 drawZoneBox(event.getPoseStack(), event.getCamera(), zone);
                 drawZoneHighlight(event.getPoseStack(), event.getCamera(), level, zone);
                 drawZonePlots(event.getPoseStack(), event.getCamera(), zone);
