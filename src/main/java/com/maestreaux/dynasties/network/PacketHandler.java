@@ -24,15 +24,26 @@ public class PacketHandler {
     );
 
     public static void register() {
-        INSTANCE.messageBuilder(CZonesPacket.class, 1, NetworkDirection.PLAY_TO_CLIENT)
+        INSTANCE.messageBuilder(CZonesPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(CZonesPacket::encode)
                 .decoder(CZonesPacket::new)
                 .consumerMainThread(CZonesPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(CAddZonePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(CAddZonePacket::encode)
+                .decoder(CAddZonePacket::new)
+                .consumerMainThread(CAddZonePacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(CAddPlotPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(CAddPlotPacket::encode)
+                .decoder(CAddPlotPacket::new)
+                .consumerMainThread(CAddPlotPacket::handle)
+                .add();
     }
 
     public static void sendToAll(Object msg) {
-        // TODO: Optimize networking?
         INSTANCE.send(PacketDistributor.ALL.noArg(), msg);
     }
 

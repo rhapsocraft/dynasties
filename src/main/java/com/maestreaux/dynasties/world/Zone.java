@@ -1,5 +1,7 @@
 package com.maestreaux.dynasties.world;
 
+import com.maestreaux.dynasties.network.PacketHandler;
+import com.maestreaux.dynasties.network.ZonePacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +17,6 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,11 +30,12 @@ public class Zone {
     private final ResourceKey<Level> dimension;
     public static List<Zone> ZONES = new ArrayList<>();
 
-    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension) {
+    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension, List<Plot> plots) {
         this.level = null;
         this.dimension = dimension;
         this.uuid = uuid;
         this.setCenter(center);
+        this.plots.addAll(plots);
     }
 
     public Zone(Level level) {
@@ -53,6 +55,11 @@ public class Zone {
 
     public static void add(ServerLevel level, Zone newZone) {
         ZoneSavedData.addZone(level, newZone);
+        PacketHandler.sendToAll(new ZonePacket.CAddZonePacket(newZone));
+    }
+
+    public static void add(Zone newZone) {
+        ZONES.add(newZone);
     }
 
     public static List<Zone> getZones(ServerLevel level) {
@@ -65,6 +72,10 @@ public class Zone {
 
     public static List<Zone> getZones() {
         return ZONES;
+    }
+    public void save(ServerLevel level) {
+        var data = ZoneSavedData.getInstance(level);
+        data.save();
     }
 
     public void setCenter(BlockPos newCenter) {
@@ -94,8 +105,42 @@ public class Zone {
         this.uuid = uuid;
     }
 
+    public static Zone getZoneByUUID(UUID uuid) {
+        var firstMatch = ZONES.stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst();
+
+        return firstMatch.orElse(null);
+    }
+
+    public static Zone getZoneByUUID(ServerLevel level, UUID uuid) {
+        return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
+    }
+
+    public void addPlot(BlockPos startPos, BlockPos endPos, int numSlots) {
+        var newPlot = new Plot(startPos.subtract(this.center), endPos.subtract(this.center));
+        newPlot.setParentZone(this);
+
+        for(int i = 0; i < numSlots; i++) {
+            newPlot.addEmptySlot();
+        }
+
+        this.plots.add(newPlot);
+
+        if (!this.level.isClientSide()) {
+            this.save((ServerLevel) this.level);
+        }
+    }
+
     public void addPlot(BlockPos startPos, BlockPos endPos) {
-        this.plots.add(new Plot(startPos.subtract(this.center), endPos.subtract(this.center)));
+        // Client operation
+        this.addPlot(startPos, endPos, 0);
+    }
+
+    public Plot getPlotByUUID(UUID plotUUID) {
+        return this.plots.stream().filter((plot) -> plot.getUUID().equals(plotUUID)).findFirst().orElse(null);
+    }
+
+    public Plot getNextAvailablePlot() {
+        return this.plots.stream().filter(plot -> plot.getAvailableSlot() != null).findFirst().orElse(null);
     }
 
     public List<Plot> getPlots() {
@@ -111,8 +156,9 @@ public class Zone {
     }
 
     public CompoundTag nbtWritePlot(CompoundTag compoundTag, Plot plot) {
-        compoundTag.put("villagerdynasties:plot_start", NbtUtils.writeBlockPos(plot.startPos));
-        compoundTag.put("villagerdynasties:plot_end", NbtUtils.writeBlockPos(plot.endPos));
+        compoundTag.put("villagerdynasties:plot_start", NbtUtils.writeBlockPos(plot.getStartPos()));
+        compoundTag.put("villagerdynasties:plot_end", NbtUtils.writeBlockPos(plot.getEndPos()));
+        plot.save(compoundTag);
 
         return compoundTag;
     }
@@ -147,30 +193,16 @@ public class Zone {
         if (listTag != null) {
             for (int i = 0; i < listTag.size(); i++) {
                 var currentPlot = listTag.getCompound(i);
-                this.plots.add(nbtReadPlot(currentPlot));
+                var newPlot = nbtReadPlot(currentPlot);
+                newPlot.setParentZone(this);
+                newPlot.load(currentPlot);
+
+                this.plots.add(newPlot);
             }
         }
 
         if (compoundTag.hasUUID("villagerdynasties:zone_uuid")) {
             this.uuid = compoundTag.getUUID("villagerdynasties:zone_uuid");
-        }
-    }
-
-    public static class Plot {
-        private final BlockPos startPos;
-        private final BlockPos endPos;
-
-        public Plot(BlockPos startPos, BlockPos endPos) {
-            this.startPos = startPos;
-            this.endPos = endPos;
-        }
-
-        public Vec3i getStartPos() {
-            return startPos;
-        }
-
-        public Vec3i getEndPos() {
-            return endPos;
         }
     }
 
@@ -233,5 +265,6 @@ public class Zone {
         public static ZoneSavedData getInstance(ServerLevel serverLevel) {
             return serverLevel.getDataStorage().computeIfAbsent(((compoundTag) -> ZoneSavedData.load(serverLevel, compoundTag)), ZoneSavedData::create, "zone");
         }
+
     }
 }

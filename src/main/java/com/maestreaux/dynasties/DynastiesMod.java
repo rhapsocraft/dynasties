@@ -2,6 +2,7 @@ package com.maestreaux.dynasties;
 
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.world.Zone;
+import com.maestreaux.dynasties.world.entities.DynastyVillager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Items;
@@ -41,6 +42,8 @@ public class DynastiesMod
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
+        ModSensorTypes.SENSOR_TYPES.register(modEventBus);
+        ModMemoryTypes.MEMORY_TYPES.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(DynastiesMod.class);
@@ -78,7 +81,16 @@ public class DynastiesMod
                 var level = event.getLevel();
                 var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ?  hitPos.above() : hitPos;
 
-                Zone.add(serverLevel, new Zone(serverLevel, position));
+                var newZone = new Zone(serverLevel, position);
+
+                Zone.add(serverLevel, newZone);
+
+                for(int i = 0; i < 6; i++) {
+                    var newVillager = new DynastyVillager(serverLevel, newZone);
+                    serverLevel.addFreshEntity(newVillager);
+                    newVillager.moveTo(newZone.getCenter().above().getCenter());
+                }
+
             } else if (event.getItemStack().is(Items.STICK)) {
                 Zone.getZones(serverLevel);
             }

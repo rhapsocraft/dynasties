@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.world.Zone;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -20,6 +21,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.List;
 
 @Mod.EventBusSubscriber(modid = DynastiesMod.MODID, value = Dist.CLIENT)
@@ -74,16 +78,27 @@ public class ZoneRenderer {
         buffer.endBatch(RenderType.lines());
     }
 
+    private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
+        if (pos1.getX() + pos1.getZ() > pos2.getX() + pos2.getZ()) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
     public static void drawZonePlots(PoseStack matrixStack, Camera camera, Zone zone) {
         var plots = zone.getPlots();
         for (var plot: plots) {
             var plotStartPos = plot.getStartPos().offset(zone.getCenter());
             var plotEndPos = plot.getEndPos().offset(zone.getCenter());
+            var corner1 = new BlockPos(plotStartPos.getX(), plotStartPos.getY(), plotEndPos.getZ());
+            var corner2 = new BlockPos(plotEndPos.getX(), plotStartPos.getY(), plotStartPos.getZ());
 
-            var startPosX = Math.max(plotStartPos.getX(), plotEndPos.getX());
-            var endPosX = Math.min(plotStartPos.getX(), plotEndPos.getX());
-            var startPosZ = Math.min(plotStartPos.getZ(), plotEndPos.getZ());
-            var endPosZ = Math.max(plotStartPos.getZ(), plotEndPos.getZ());
+            List<BlockPos> list = ObjectArrayList.of(plotStartPos, plotEndPos, corner1, corner2);
+            list.sort(ZoneRenderer::mostSouthernEast);
+
+            var closestPos = ((BlockPos) list.toArray()[0]).offset(1, 0, 1);
+            var furthestPos = ((BlockPos) list.toArray()[list.size() - 1]);
 
             MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
             VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.debugQuads());
@@ -91,15 +106,13 @@ public class ZoneRenderer {
             Vec3 cam = camera.getPosition();
 
             matrixStack.pushPose();
-
             matrixStack.translate(-cam.x, -cam.y, -cam.z);
-
             Matrix4f mat = matrixStack.last().pose();
 
-            vertexConsumer.vertex(mat, (float) startPosX, (float) plotStartPos.getY() + 1.005F, (float) startPosZ).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) endPosX, (float) plotStartPos.getY() + 1.005F, (float) startPosZ).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) endPosX, (float) plotStartPos.getY() + 1.005F, (float) endPosZ).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) startPosX, (float) plotStartPos.getY() + 1.005F, (float) endPosZ).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) closestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) closestPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) furthestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) closestPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) furthestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) furthestPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) closestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) furthestPos.getZ()).color(100, 220, 100, 150).endVertex();
 
             matrixStack.popPose();
 
@@ -115,9 +128,11 @@ public class ZoneRenderer {
 
             // TODO: Zones by Level
             for(var zone: Zone.getZones()) {
-                drawZoneBox(event.getPoseStack(), event.getCamera(), zone);
-                drawZoneHighlight(event.getPoseStack(), event.getCamera(), level, zone);
-                drawZonePlots(event.getPoseStack(), event.getCamera(), zone);
+                if (zone != null) {
+                    drawZoneBox(event.getPoseStack(), event.getCamera(), zone);
+                    drawZoneHighlight(event.getPoseStack(), event.getCamera(), level, zone);
+                    drawZonePlots(event.getPoseStack(), event.getCamera(), zone);
+                }
             }
         }
     }

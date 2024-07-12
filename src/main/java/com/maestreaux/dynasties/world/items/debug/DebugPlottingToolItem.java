@@ -1,5 +1,7 @@
 package com.maestreaux.dynasties.world.items.debug;
 
+import com.maestreaux.dynasties.network.PacketHandler;
+import com.maestreaux.dynasties.network.ZonePacket;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -32,7 +34,12 @@ public class DebugPlottingToolItem extends SimpleFoiledItem {
                 } else {
                     var newPos = pContext.getClickedPos();
                     if (!this.currentPlotStartPos.equals(newPos)) {
-                        parentZone.addPlot(this.currentPlotStartPos, newPos.offset(0, newPos.getY() - this.currentPlotStartPos.getY(), 0));
+                        var posOffset = newPos.offset(0, newPos.getY() - this.currentPlotStartPos.getY(), 0);
+                        parentZone.addPlot(this.currentPlotStartPos, posOffset, 2);
+
+                        var addPlotPacket = new ZonePacket.CAddPlotPacket(parentZone.getUUID(), this.currentPlotStartPos, posOffset);
+                        PacketHandler.sendToAll(addPlotPacket);
+
                         this.currentPlotStartPos = null;
                     }
                 }

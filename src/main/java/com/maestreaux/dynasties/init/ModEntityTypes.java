@@ -12,5 +12,5 @@ import net.minecraftforge.registries.RegistryObject;
 public class ModEntityTypes {
     public static DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, DynastiesMod.MODID);
 
-    public static final RegistryObject<EntityType<DynastyVillager>> DYNASTY_VILLAGER = ENTITY_TYPES.register("dynasty_villager", () -> EntityType.Builder.of(DynastyVillager::new, MobCategory.MISC).sized(0.6F, 1.95F).clientTrackingRange(10).build(new ResourceLocation(DynastiesMod.MODID, "dynasty_villager").toString()));
+    public static final RegistryObject<EntityType<DynastyVillager>> DYNASTY_VILLAGER = ENTITY_TYPES.register("dynasty_villager", () -> EntityType.Builder.<DynastyVillager>of(DynastyVillager::new, MobCategory.MISC).sized(0.6F, 1.95F).clientTrackingRange(10).build(new ResourceLocation(DynastiesMod.MODID, "dynasty_villager").toString()));
 }
