@@ -1,6 +1,8 @@
 package com.maestreaux.dynasties.client.renderer;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.world.Partition;
+import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -86,38 +88,61 @@ public class ZoneRenderer {
         }
     }
 
-    public static void drawZonePlots(PoseStack matrixStack, Camera camera, Zone zone) {
-        var plots = zone.getPlots();
-        for (var plot: plots) {
-            var plotStartPos = plot.getStartPos().offset(zone.getCenter());
-            var plotEndPos = plot.getEndPos().offset(zone.getCenter());
-            var corner1 = new BlockPos(plotStartPos.getX(), plotStartPos.getY(), plotEndPos.getZ());
-            var corner2 = new BlockPos(plotEndPos.getX(), plotStartPos.getY(), plotStartPos.getZ());
-
-            List<BlockPos> list = ObjectArrayList.of(plotStartPos, plotEndPos, corner1, corner2);
-            list.sort(ZoneRenderer::mostSouthernEast);
-
-            var closestPos = ((BlockPos) list.toArray()[0]).offset(1, 0, 1);
-            var furthestPos = ((BlockPos) list.toArray()[list.size() - 1]);
+    public static void drawPartitions(PoseStack matrixStack, Camera camera, Plot plot) {
+        for (var partition: plot.getPartitions()) {
+            var partitionStartPos = partition.getOrigin().offset(plot.getAbsoluteStartPos());
+            var partitionEndPos = partitionStartPos.offset(partition.getWidth(), 0, partition.getLength());
 
             MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
             VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.debugQuads());
 
-            Vec3 cam = camera.getPosition();
-
             matrixStack.pushPose();
+            Vec3 cam = camera.getPosition();
             matrixStack.translate(-cam.x, -cam.y, -cam.z);
             Matrix4f mat = matrixStack.last().pose();
 
-            vertexConsumer.vertex(mat, (float) closestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) closestPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) furthestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) closestPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) furthestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) furthestPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) closestPos.getX(), (float) plotStartPos.getY() + 1.005F, (float) furthestPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(100, 220, 100, 150).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(100, 220, 100, 150).endVertex();
 
             matrixStack.popPose();
 
             buffer.endBatch(RenderType.debugQuads());
         }
+
+    }
+
+    public static void drawZonePlots(PoseStack matrixStack, Camera camera, Zone zone) {
+        var plots = zone.getPlots();
+
+        for (var plot: plots) {
+            var plotStartPos = plot.getStartPos().offset(zone.getCenter());
+            var plotEndPos = plot.getEndPos().offset(zone.getCenter()).offset(1, 0, 1);
+            //var corner1 = new BlockPos(plotStartPos.getX(), plotStartPos.getY(), plotEndPos.getZ());
+            //var corner2 = new BlockPos(plotEndPos.getX(), plotStartPos.getY(), plotStartPos.getZ());
+
+            //List<BlockPos> list = ObjectArrayList.of(plotStartPos, plotEndPos, corner1, corner2);
+            //.sort(ZoneRenderer::mostSouthernEast);
+
+            //var closestPos = ((BlockPos) list.toArray()[0]).offset(1, 0, 1);
+            //var furthestPos = ((BlockPos) list.toArray()[list.size() - 1]);
+
+            MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+            VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.lines());
+
+            matrixStack.pushPose();
+            Vec3 cam = camera.getPosition();
+            matrixStack.translate(-cam.x, -cam.y, -cam.z);
+
+            LevelRenderer.renderLineBox(matrixStack, vertexConsumer, plotStartPos.getX(), plotStartPos.getY() + 1.005D, plotStartPos.getZ(), plotEndPos.getX(), plotStartPos.getY() + 1.005D, plotEndPos.getZ(), 6.6f, 15.9f, 6.6f, 15.5f);
+
+            matrixStack.popPose();
+            buffer.endBatch(RenderType.lines());
+
+            drawPartitions( matrixStack, camera, plot);
+        }
+
 
     }
 

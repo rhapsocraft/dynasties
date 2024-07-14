@@ -45,6 +45,9 @@ public class DynastiesMod
         ModSensorTypes.SENSOR_TYPES.register(modEventBus);
         ModMemoryTypes.MEMORY_TYPES.register(modEventBus);
 
+        // Custom Registries
+        ModBuildings.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(DynastiesMod.class);
 
@@ -85,7 +88,7 @@ public class DynastiesMod
 
                 Zone.add(serverLevel, newZone);
 
-                for(int i = 0; i < 6; i++) {
+                for(int i = 0; i < 1; i++) {
                     var newVillager = new DynastyVillager(serverLevel, newZone);
                     serverLevel.addFreshEntity(newVillager);
                     newVillager.moveTo(newZone.getCenter().above().getCenter());

@@ -6,6 +6,7 @@ import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Settlement;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.ClaimPlot;
+import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.DoConstruction;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.GoHome;
 import com.maestreaux.dynasties.world.entities.ai.brain.sensor.AvailablePlotSensor;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -96,7 +97,8 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
     public BrainActivityGroup<DynastyVillager> getIdleTasks() {
         return BrainActivityGroup.idleTasks(
                 new ClaimPlot<>(),
-                new GoHome<>()
+                new GoHome<>(),
+                new DoConstruction<>()
         );
     }
 

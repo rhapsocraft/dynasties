@@ -1,15 +1,15 @@
 package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.init.ModBuildings;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.ZonePacket;
+import com.maestreaux.dynasties.world.Building;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -35,5 +35,11 @@ public class GeneralModEvents {
         if (!level.isClientSide()) {
             sendZonesListPacket((ServerLevel) level, (ServerPlayer) event.getEntity());
         }
+    }
+
+    @SubscribeEvent
+    public static void onServerStarted(ServerStartedEvent event) {
+        var house = ModBuildings.BASIC_HOUSE.get();
+        house.loadTemplate(event.getServer());
     }
 }

@@ -1,7 +1,9 @@
 package com.maestreaux.dynasties.network;
 
+import com.maestreaux.dynasties.world.Partition;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +19,31 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class ZonePacket {
+    public static List<Partition> decodePartitionsFromBuffer(FriendlyByteBuf buffer) {
+        var partitionsCount = buffer.readInt();
+        var partitions = new ArrayList<Partition>();
+
+        for (int j = 0; j < partitionsCount; j++) {
+            var partOrigin = buffer.readBlockPos();
+            var partWidth = buffer.readInt();
+            var partLength = buffer.readInt();
+
+            partitions.add(new Partition(partOrigin, partWidth, partLength));
+        }
+
+        return partitions;
+    }
+
+    public static void encodePartitionsToBuffer(FriendlyByteBuf buffer, List<Partition> partitions) {
+        buffer.writeInt(partitions.size());
+
+        for(var partition: partitions) {
+            buffer.writeBlockPos(partition.getOrigin());
+            buffer.writeInt(partition.getWidth());
+            buffer.writeInt(partition.getLength());
+        }
+    }
+
     public static void encodeZoneToBuffer(FriendlyByteBuf buffer, Zone zone) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("zone-packet:uuid", zone.getUUID());
@@ -31,6 +58,9 @@ public class ZonePacket {
         for(var plot: plots) {
             buffer.writeBlockPos(plot.getStartPos());
             buffer.writeBlockPos(plot.getEndPos());
+
+            var partitions = plot.getPartitions();
+            encodePartitionsToBuffer(buffer, partitions);
         }
     }
 
@@ -38,17 +68,24 @@ public class ZonePacket {
         var tag = buffer.readNbt();
         var dimension = buffer.readResourceKey(Registries.DIMENSION);
 
-        var plotsCount = buffer.readInt();
-        var plots = new ArrayList<Plot>();
-
-        for (int i = 0; i < plotsCount; i++) {
-            var startPos = buffer.readBlockPos();
-            var endPos = buffer.readBlockPos();
-            plots.add(new Plot(startPos, endPos));
-        }
-
         if (tag != null) {
-            return new Zone(tag.getUUID("zone-packet:uuid"), NbtUtils.readBlockPos(tag.getCompound("zone-packet:center")), dimension, plots);
+            var newZone = new Zone(tag.getUUID("zone-packet:uuid"), NbtUtils.readBlockPos(tag.getCompound("zone-packet:center")), dimension);
+
+            var plotsCount = buffer.readInt();
+
+            for (int i = 0; i < plotsCount; i++) {
+                var startPos = buffer.readBlockPos();
+                var endPos = buffer.readBlockPos();
+
+                var newPlot = newZone.addPlot(startPos, endPos);
+                var partitions = decodePartitionsFromBuffer(buffer);
+
+                for (var partition: partitions) {
+                    newPlot.addPartition(partition);
+                }
+            }
+
+            return newZone;
         }
 
         return null;
@@ -58,23 +95,35 @@ public class ZonePacket {
         private final BlockPos plotStartPos;
         private final BlockPos plotEndPos;
         private final UUID zoneUUID;
+        private final List<Partition> partitions;
 
         public CAddPlotPacket(UUID zoneUUID, BlockPos plotStartPos, BlockPos plotEndPos) {
             this.zoneUUID = zoneUUID;
             this.plotStartPos = plotStartPos;
             this.plotEndPos = plotEndPos;
+            this.partitions = new ArrayList<>();
+        }
+
+        public CAddPlotPacket(UUID zoneUUID, BlockPos plotStartPos, BlockPos plotEndPos, List<Partition> partitions) {
+            this(zoneUUID, plotStartPos, plotEndPos);
+            this.partitions.addAll(partitions);
         }
 
         public CAddPlotPacket(FriendlyByteBuf buffer) {
             this.zoneUUID = buffer.readUUID();
             this.plotStartPos = buffer.readBlockPos();
             this.plotEndPos = buffer.readBlockPos();
+
+            this.partitions = new ArrayList<>();
+            this.partitions.addAll(decodePartitionsFromBuffer(buffer));
         }
 
         public void encode(FriendlyByteBuf buffer) {
             buffer.writeUUID(this.zoneUUID);
             buffer.writeBlockPos(this.plotStartPos);
             buffer.writeBlockPos(this.plotEndPos);
+
+            encodePartitionsToBuffer(buffer, this.partitions);
         }
 
         public void handle(Supplier<NetworkEvent.Context> context) {
@@ -89,7 +138,11 @@ public class ZonePacket {
 
         public void handlePacket(Supplier<NetworkEvent.Context> context) {
             var zone = Zone.getZoneByUUID(this.zoneUUID);
-            zone.addPlot(this.plotStartPos, this.plotEndPos);
+            var plot = zone.addPlot(this.plotStartPos, this.plotEndPos);
+
+            for (var partition: this.partitions) {
+                plot.addPartition(partition);
+            }
         }
     }
 

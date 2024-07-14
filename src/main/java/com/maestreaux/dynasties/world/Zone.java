@@ -30,12 +30,11 @@ public class Zone {
     private final ResourceKey<Level> dimension;
     public static List<Zone> ZONES = new ArrayList<>();
 
-    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension, List<Plot> plots) {
+    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension) {
         this.level = null;
         this.dimension = dimension;
         this.uuid = uuid;
         this.setCenter(center);
-        this.plots.addAll(plots);
     }
 
     public Zone(Level level) {
@@ -115,8 +114,8 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
-    public void addPlot(BlockPos startPos, BlockPos endPos, int numSlots) {
-        var newPlot = new Plot(startPos.subtract(this.center), endPos.subtract(this.center));
+    public Plot addPlot(BlockPos startPos, BlockPos endPos, int numSlots) {
+        var newPlot = new Plot(startPos, endPos);
         newPlot.setParentZone(this);
 
         for(int i = 0; i < numSlots; i++) {
@@ -125,14 +124,15 @@ public class Zone {
 
         this.plots.add(newPlot);
 
-        if (!this.level.isClientSide()) {
+        if (this.level != null && !this.level.isClientSide()) {
             this.save((ServerLevel) this.level);
         }
+
+        return newPlot;
     }
 
-    public void addPlot(BlockPos startPos, BlockPos endPos) {
-        // Client operation
-        this.addPlot(startPos, endPos, 0);
+    public Plot addPlot(BlockPos startPos, BlockPos endPos) {
+        return this.addPlot(startPos, endPos, 0);
     }
 
     public Plot getPlotByUUID(UUID plotUUID) {

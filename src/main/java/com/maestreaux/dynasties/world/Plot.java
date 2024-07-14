@@ -1,7 +1,9 @@
 package com.maestreaux.dynasties.world;
 
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
@@ -19,10 +21,24 @@ public class Plot {
     private final BlockPos endPos;
     private Zone parentZone;
     private final List<Slot> slots = new ArrayList<>();
+    private final List<Partition> partitions = new ArrayList<>();
 
     public Plot(BlockPos startPos, BlockPos endPos) {
-        this.startPos = startPos;
-        this.endPos = endPos;
+        var corner1 = new BlockPos(startPos.getX(), startPos.getY(), endPos.getZ());
+        var corner2 = new BlockPos(endPos.getX(), startPos.getY(), startPos.getZ());
+        List<BlockPos> list = ObjectArrayList.of(startPos, endPos, corner1, corner2);
+        list.sort(Plot::mostSouthernEast);
+
+        this.endPos = ((BlockPos) list.toArray()[0]);
+        this.startPos = ((BlockPos) list.toArray()[list.size() - 1]);
+    }
+
+    private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
+        if (pos1.getX() + pos1.getZ() > pos2.getX() + pos2.getZ()) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
 
     public void addEmptySlot() {
@@ -30,7 +46,7 @@ public class Plot {
     }
 
     public BlockPos getStartPos() {
-        return startPos;
+        return this.startPos;
     }
 
     public BlockPos getAbsoluteStartPos() {
@@ -38,7 +54,7 @@ public class Plot {
     }
 
     public BlockPos getEndPos() {
-        return endPos;
+        return this.endPos;
     }
 
     public BlockPos getAbsoluteEndPos() {
@@ -67,12 +83,27 @@ public class Plot {
         }
     }
 
+    // TODO: Temporary
+    public Partition getPartitionToBuildOn() {
+        return this.partitions.stream().filter(part -> part.getPartitionType() == Partition.PartitionType.HOME).findFirst().orElse(null);
+    }
+
+    public void addPartition(Partition newPartition) {
+        newPartition.setParentPlot(this);
+        this.partitions.add(newPartition);
+    }
+
+    public List<Partition> getPartitions() {
+        return this.partitions;
+    }
+
     public Slot getAvailableSlot() {
         return this.slots.stream().filter(slot -> slot.occupiedBy == null).findFirst().orElse(null);
     }
 
     public void save(CompoundTag tag) {
         var slotsListTag = new ListTag();
+        var partitionsListTag = new ListTag();
 
         for(var slot: this.slots) {
             var slotTag = new CompoundTag();
@@ -81,12 +112,21 @@ public class Plot {
             slotsListTag.add(slotTag);
         }
 
+        for(var partition: this.partitions) {
+            var partitionTag = new CompoundTag();
+            partition.save(partitionTag);
+
+            partitionsListTag.add(partitionTag);
+        }
+
         tag.put("villagerdynasties:slots", slotsListTag);
+        tag.put("villagerdynasties:partitions", partitionsListTag);
         tag.putUUID("villagerdynasties:plot_uuid", this.uuid);
     }
 
     public void load(CompoundTag tag) {
         var slotsListTag = (ListTag) tag.get("villagerdynasties:slots");
+        var partitionsListTag = (ListTag) tag.get("villagerdynasties:partitions");
 
         if (slotsListTag != null) {
             for(int i = 0; i < slotsListTag.size(); i++) {
@@ -97,21 +137,26 @@ public class Plot {
             }
         }
 
+        if (partitionsListTag != null) {
+            for(int i = 0; i < partitionsListTag.size(); i++) {
+                var newPartition = new Partition();
+                newPartition.load(partitionsListTag.getCompound(i));
+
+                this.partitions.add(newPartition);
+            }
+        }
+
+
         if (tag.hasUUID("villagerdynasties:plot_uuid")) {
             this.uuid = tag.getUUID("villagerdynasties:plot_uuid");
         }
     }
 
-    public static class Partition {
-        private BlockPos origin;
-        private int length;
-        private int width;
-        private String type;
+    public static class PlotRecipe {
+        private final String name;
 
-        public Partition(BlockPos relativeOrigin, int width, int length, String type) {
-            this.origin = relativeOrigin;
-            this.length = length;
-            this.width = width;
+        public PlotRecipe(String name) {
+            this.name = name;
         }
     }
 
