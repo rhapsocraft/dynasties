@@ -77,7 +77,7 @@ public class ZonePacket {
                 var startPos = buffer.readBlockPos();
                 var endPos = buffer.readBlockPos();
 
-                var newPlot = newZone.addPlot(startPos, endPos);
+                var newPlot = newZone.addPlot(startPos, endPos, null);
                 var partitions = decodePartitionsFromBuffer(buffer);
 
                 for (var partition: partitions) {
@@ -138,7 +138,7 @@ public class ZonePacket {
 
         public void handlePacket(Supplier<NetworkEvent.Context> context) {
             var zone = Zone.getZoneByUUID(this.zoneUUID);
-            var plot = zone.addPlot(this.plotStartPos, this.plotEndPos);
+            var plot = zone.addPlot(this.plotStartPos, this.plotEndPos, null);
 
             for (var partition: this.partitions) {
                 plot.addPartition(partition);

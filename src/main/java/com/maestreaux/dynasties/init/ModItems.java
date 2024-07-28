@@ -21,6 +21,9 @@ public class ModItems {
     public static final RegistryObject<Item> DEBUG_TOOL_PLOT = ITEMS.register("dynasties_debug_tool_plot", () -> new DebugPlottingToolItem(new Item.Properties()));
     // public static final RegistryObject<Item> DEBUG_TOOL_SELECTOR = ITEMS.register("dynasties_debug_tool_selector", () -> new DebugPlottingToolItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> TENT = ITEMS.register("tent", () -> new BlockItem(ModBlocks.TENT.get(), new Item.Properties()));
+
+
     public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("villager_dynasties", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(Items.HONEY_BLOCK::getDefaultInstance)
@@ -28,5 +31,7 @@ public class ModItems {
                 output.accept(DYNASTY_VILLAGER_SPAWN_EGG.get());
                 output.accept(DEBUG_TOOL.get());
                 output.accept(DEBUG_TOOL_PLOT.get());
+                output.accept(TENT.get());
             }).build());
+
 }

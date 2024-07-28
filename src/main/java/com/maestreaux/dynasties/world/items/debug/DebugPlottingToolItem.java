@@ -3,6 +3,7 @@ package com.maestreaux.dynasties.world.items.debug;
 import com.maestreaux.dynasties.core.utils.PlotUtils;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.ZonePacket;
+import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -39,7 +40,7 @@ public class DebugPlottingToolItem extends SimpleFoiledItem {
                     if (newPosZone != null && !this.currentPlotStartPos.equals(newPos) && PlotUtils.isValidPlot(currentPlotStartPos, newPos, parentZone)) {
                         var endPosOffset = newPos.offset(-parentZone.getCenter().getX(), -this.currentPlotStartPos.getY() - 1, -parentZone.getCenter().getZ());
                         var startPosOffset = this.currentPlotStartPos.subtract(parentZone.getCenter());
-                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, 2);
+                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESIDENTIAL, 2);
 
                         PlotUtils.debugSetPartitions(newPlot);
 

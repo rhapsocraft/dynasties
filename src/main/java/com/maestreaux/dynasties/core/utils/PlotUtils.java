@@ -38,9 +38,14 @@ public class PlotUtils {
     }
 
     public static void debugSetPartitions(Plot plot) {
+        var houseToBuild = Math.random() >= 0.5 ?  ModBuildings.BASIC_HOUSE : ModBuildings.BASIC_HOUSE_2;
+
         var partitions = ObjectArrayList.of(
-                new Partition(6, 6, Partition.PartitionType.HOME, ModBuildings.BASIC_HOUSE.get()),
-                new Partition(4, 4, Partition.PartitionType.GARDEN, null)
+                new Partition(6, 6, Partition.PartitionType.HOME, houseToBuild.get(), 2),
+                new Partition(2, 2, Partition.PartitionType.GARDEN, ModBuildings.SMALL_GARDEN.get(), 1),
+                new Partition(3, 3, Partition.PartitionType.GARDEN, ModBuildings.MEDIUM_GARDEN.get(), 1),
+                new Partition(3, 5, Partition.PartitionType.GARDEN, ModBuildings.LONG_GARDEN.get(), 1),
+                new Partition(2, 5, Partition.PartitionType.GARDEN, ModBuildings.NARROW_GARDEN.get(), 1)
         );
 
         partitionPlot(plot, partitions);
@@ -77,9 +82,24 @@ public class PlotUtils {
         return newFreeRects;
     }
 
+    public static Rectangle fitRectangle(Rectangle largerRectangle, Rectangle smallerRectangle) {
+
+        if (fitsWithin(largerRectangle, smallerRectangle)) {
+            return smallerRectangle;
+        }
+
+        var rotatedRectangle = new Rectangle((int) smallerRectangle.getHeight(), (int) smallerRectangle.getWidth());
+
+        if (fitsWithin(largerRectangle, rotatedRectangle)) {
+            return rotatedRectangle;
+        }
+
+        return null;
+    }
+
     public static void partitionPlot(Plot plot, List<Partition> partitions) {
         var largeRect = new Rectangle(Math.abs(plot.getEndPos().getX() - plot.getStartPos().getX()) + 1, Math.abs(plot.getEndPos().getZ() - plot.getStartPos().getZ()) + 1);
-        var _partitions = partitions.stream().sorted((r1, r2) -> Integer.compare(r2.getWidth() * r2.getLength(), r1.getWidth() * r1.getLength())).toList();
+        var _partitions = partitions.stream().sorted((r1, r2) -> Integer.compare(r2.getWeight(), r1.getWeight())).toList();
 
         List<Partition> packed = new ArrayList<>();
         List<Rectangle> freeRects = new ArrayList<>();
@@ -91,15 +111,17 @@ public class PlotUtils {
             for (int i = 0; i < freeRects.size(); i++) {
                 Rectangle freeRect = freeRects.get(i);
 
-                if (fitsWithin(freeRect, newRect)) {
-                    newRect.x = freeRect.x;
-                    newRect.y = freeRect.y;
+                var correctedRectangle = fitRectangle(freeRect, newRect);
 
-                    partition.setOrigin(new BlockPos(newRect.x, 0, newRect.y));
+                if (correctedRectangle != null) {
+                    correctedRectangle.x = freeRect.x;
+                    correctedRectangle.y = freeRect.y;
+
+                    partition.setOrigin(new BlockPos(correctedRectangle.x, 0, correctedRectangle.y));
                     packed.add(partition);
 
                     freeRects.remove(i);
-                    freeRects.addAll(splitRectangle(freeRect, newRect));
+                    freeRects.addAll(splitRectangle(freeRect, correctedRectangle));
 
                     break;
                 }

@@ -42,10 +42,10 @@ public class ZoneRenderer {
 
         Matrix4f mat = matrixStack.last().pose();
 
-        vertexConsumer.vertex(mat, surfacePos.getX(), surfacePos.getY() + 1.001F, surfacePos.getZ()).color(0, 255, 255, 150).endVertex();
-        vertexConsumer.vertex(mat, surfacePos.getX() + 1, surfacePos.getY() + 1.001F, surfacePos.getZ()).color(0, 255, 255, 150).endVertex();
-        vertexConsumer.vertex(mat, surfacePos.getX() + 1, surfacePos.getY() + 1.001F, surfacePos.getZ() + 1).color(0, 255, 255, 150).endVertex();
-        vertexConsumer.vertex(mat, surfacePos.getX(), surfacePos.getY() + 1.001F, surfacePos.getZ() + 1).color(0, 255, 255, 150).endVertex();
+        vertexConsumer.vertex(mat, surfacePos.getX(), surfacePos.getY() + 1.001F, surfacePos.getZ()).color(0, 255, 255, 80).endVertex();
+        vertexConsumer.vertex(mat, surfacePos.getX() + 1, surfacePos.getY() + 1.001F, surfacePos.getZ()).color(0, 255, 255, 80).endVertex();
+        vertexConsumer.vertex(mat, surfacePos.getX() + 1, surfacePos.getY() + 1.001F, surfacePos.getZ() + 1).color(0, 255, 255, 80).endVertex();
+        vertexConsumer.vertex(mat, surfacePos.getX(), surfacePos.getY() + 1.001F, surfacePos.getZ() + 1).color(0, 255, 255, 80).endVertex();
 
         matrixStack.popPose();
 
@@ -80,14 +80,6 @@ public class ZoneRenderer {
         buffer.endBatch(RenderType.lines());
     }
 
-    private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
-        if (pos1.getX() + pos1.getZ() > pos2.getX() + pos2.getZ()) {
-            return -1;
-        } else {
-            return 1;
-        }
-    }
-
     public static void drawPartitions(PoseStack matrixStack, Camera camera, Plot plot) {
         for (var partition: plot.getPartitions()) {
             var partitionStartPos = partition.getOrigin().offset(plot.getAbsoluteStartPos());
@@ -101,10 +93,13 @@ public class ZoneRenderer {
             matrixStack.translate(-cam.x, -cam.y, -cam.z);
             Matrix4f mat = matrixStack.last().pose();
 
-            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(100, 220, 100, 150).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(100, 220, 100, 150).endVertex();
+            int pRed = partition.getPartitionType() == Partition.PartitionType.HOME ? 220 : 100;
+            int pGreen = partition.getPartitionType() == Partition.PartitionType.HOME ? 100 : 220;
+
+            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
 
             matrixStack.popPose();
 

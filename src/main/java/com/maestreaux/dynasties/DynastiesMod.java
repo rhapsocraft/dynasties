@@ -39,9 +39,11 @@ public class DynastiesMod
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
+        ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
+        ModBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModSensorTypes.SENSOR_TYPES.register(modEventBus);
         ModMemoryTypes.MEMORY_TYPES.register(modEventBus);
 

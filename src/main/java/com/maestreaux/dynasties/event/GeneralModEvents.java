@@ -39,7 +39,10 @@ public class GeneralModEvents {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
-        var house = ModBuildings.BASIC_HOUSE.get();
-        house.loadTemplate(event.getServer());
+        var house = ModBuildings.BUILDINGS;
+
+        for ( var houseEntry : house.getEntries()) {
+            houseEntry.get().loadTemplate(event.getServer());
+        }
     }
 }

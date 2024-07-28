@@ -114,8 +114,8 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
-    public Plot addPlot(BlockPos startPos, BlockPos endPos, int numSlots) {
-        var newPlot = new Plot(startPos, endPos);
+    public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type, int numSlots) {
+        var newPlot = new Plot(startPos, endPos, type);
         newPlot.setParentZone(this);
 
         for(int i = 0; i < numSlots; i++) {
@@ -131,12 +131,16 @@ public class Zone {
         return newPlot;
     }
 
-    public Plot addPlot(BlockPos startPos, BlockPos endPos) {
-        return this.addPlot(startPos, endPos, 0);
+    public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type) {
+        return this.addPlot(startPos, endPos, type, 0);
     }
 
     public Plot getPlotByUUID(UUID plotUUID) {
         return this.plots.stream().filter((plot) -> plot.getUUID().equals(plotUUID)).findFirst().orElse(null);
+    }
+
+    public List<Plot> getAvailablePlots() {
+        return this.plots.stream().filter(plot -> !plot.isPlotFull()).toList();
     }
 
     public Plot getNextAvailablePlot() {
@@ -158,6 +162,8 @@ public class Zone {
     public CompoundTag nbtWritePlot(CompoundTag compoundTag, Plot plot) {
         compoundTag.put("villagerdynasties:plot_start", NbtUtils.writeBlockPos(plot.getStartPos()));
         compoundTag.put("villagerdynasties:plot_end", NbtUtils.writeBlockPos(plot.getEndPos()));
+        compoundTag.putString("villagerdynasties:plot_type", plot.getType().name());
+
         plot.save(compoundTag);
 
         return compoundTag;
@@ -166,8 +172,9 @@ public class Zone {
     public Plot nbtReadPlot(CompoundTag plotTag) {
         var plotStartPos = NbtUtils.readBlockPos(plotTag.getCompound("villagerdynasties:plot_start"));
         var plotEndPos = NbtUtils.readBlockPos(plotTag.getCompound("villagerdynasties:plot_end"));
+        var plotType = Plot.PlotType.valueOf(plotTag.getString("villagerdynasties:plot_type"));
 
-        return new Plot(plotStartPos, plotEndPos);
+        return new Plot(plotStartPos, plotEndPos, plotType);
     }
 
     public CompoundTag save(CompoundTag compoundTag) {

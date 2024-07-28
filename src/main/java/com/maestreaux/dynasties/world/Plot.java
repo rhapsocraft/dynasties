@@ -22,8 +22,10 @@ public class Plot {
     private Zone parentZone;
     private final List<Slot> slots = new ArrayList<>();
     private final List<Partition> partitions = new ArrayList<>();
+    private final PlotType type;
 
-    public Plot(BlockPos startPos, BlockPos endPos) {
+
+    public Plot(BlockPos startPos, BlockPos endPos, PlotType type) {
         var corner1 = new BlockPos(startPos.getX(), startPos.getY(), endPos.getZ());
         var corner2 = new BlockPos(endPos.getX(), startPos.getY(), startPos.getZ());
         List<BlockPos> list = ObjectArrayList.of(startPos, endPos, corner1, corner2);
@@ -31,7 +33,14 @@ public class Plot {
 
         this.endPos = ((BlockPos) list.toArray()[0]);
         this.startPos = ((BlockPos) list.toArray()[list.size() - 1]);
+
+        this.type = type;
     }
+
+    public Plot(BlockPos startPos, BlockPos endPos) {
+        this(startPos, endPos, null);
+    }
+
 
     private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
         if (pos1.getX() + pos1.getZ() > pos2.getX() + pos2.getZ()) {
@@ -57,6 +66,8 @@ public class Plot {
         return this.endPos;
     }
 
+    public PlotType getType() { return this.type; }
+
     public BlockPos getAbsoluteEndPos() {
         return this.endPos.offset(this.parentZone.getCenter());
     }
@@ -77,14 +88,20 @@ public class Plot {
         return this.slots;
     }
 
-    public void refreshAllSlots() {
-        for(var slot: slots) {
-            slot.refreshSlot();
+    public void clearVillagerFromPlot(AbstractDynastyVillager villager) {
+        var occupiedSlots = this.slots.stream().filter(slot -> slot.occupiedBy == villager).toList();
+
+        for (var occupiedSlot : occupiedSlots) {
+            occupiedSlot.refreshSlot();
         }
     }
 
     // TODO: Temporary
     public Partition getPartitionToBuildOn() {
+        return this.partitions.stream().filter(part -> !part.isConstructionFinished()).findFirst().orElse(null);
+    }
+
+    public Partition getHomePartition() {
         return this.partitions.stream().filter(part -> part.getPartitionType() == Partition.PartitionType.HOME).findFirst().orElse(null);
     }
 
@@ -99,6 +116,10 @@ public class Plot {
 
     public Slot getAvailableSlot() {
         return this.slots.stream().filter(slot -> slot.occupiedBy == null).findFirst().orElse(null);
+    }
+
+    public boolean isPlotFull() {
+        return this.slots.stream().noneMatch(slot -> slot.occupiedBy == null);
     }
 
     public void save(CompoundTag tag) {
@@ -142,7 +163,7 @@ public class Plot {
                 var newPartition = new Partition();
                 newPartition.load(partitionsListTag.getCompound(i));
 
-                this.partitions.add(newPartition);
+                this.addPartition(newPartition);
             }
         }
 
@@ -176,7 +197,14 @@ public class Plot {
 
         public void setOccupier(AbstractDynastyVillager villager) {
             this.occupiedBy = villager;
-            villager.setHomePlot(this.parentPlot);
+        }
+
+        public boolean isOccupiedBy(AbstractDynastyVillager villager) {
+            if (this.occupiedBy != null) {
+                return this.occupiedBy == villager;
+            }
+
+            return false;
         }
 
         public void save(CompoundTag tag) {
@@ -191,9 +219,15 @@ public class Plot {
                 this.occupiedBy = (AbstractDynastyVillager) level.getEntity(tag.getUUID("villagerdynasties:slot_occupier"));
 
                 if (occupiedBy !=null) {
-                    this.occupiedBy.setHomePlot(this.parentPlot);
+                    this.occupiedBy.occupyPlot(this.parentPlot);
                 }
             }
         }
+    }
+
+    public enum PlotType {
+        RESIDENTIAL,
+        BURGAGE,
+        MARKET,
     }
 }

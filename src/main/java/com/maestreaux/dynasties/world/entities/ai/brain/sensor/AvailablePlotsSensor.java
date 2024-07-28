@@ -14,15 +14,15 @@ import net.tslat.smartbrainlib.util.BrainUtils;
 
 import java.util.List;
 
-public class AvailablePlotSensor<E extends AbstractDynastyVillager> extends PredicateSensor<Plot, E> {
+public class AvailablePlotsSensor<E extends AbstractDynastyVillager> extends PredicateSensor<Plot, E> {
     private static final List<MemoryModuleType<?>> MEMORIES;
 
     protected void doTick(ServerLevel level, E entity) {
         if (entity.getHomeZone() != null) {
-            var availablePlot = entity.getHomeZone().getNextAvailablePlot();
+            var availablePlots = entity.getHomeZone().getAvailablePlots();
 
-            if (availablePlot != null) {
-                BrainUtils.setMemory(entity, ModMemoryTypes.AVAILABLE_PLOT.get(), availablePlot);
+            if (availablePlots != null) {
+                BrainUtils.setMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get(), availablePlots);
             }
         }
     }
@@ -38,6 +38,6 @@ public class AvailablePlotSensor<E extends AbstractDynastyVillager> extends Pred
     }
 
     static {
-        MEMORIES = ObjectArrayList.of(new MemoryModuleType[]{ModMemoryTypes.AVAILABLE_PLOT.get()});
+        MEMORIES = ObjectArrayList.of(new MemoryModuleType[]{ModMemoryTypes.AVAILABLE_PLOTS.get()});
     }
 }

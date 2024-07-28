@@ -13,8 +13,11 @@ import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
-    protected Plot homePlot;
+    protected List<Plot> occupiedPlots = new ArrayList<>();
     protected Zone homeZone;
 
 
@@ -35,21 +38,24 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         this.homeZone = zone;
     }
 
-    public Plot getHomePlot() {
-        return this.homePlot;
+    public List<Plot> getOccupiedPlots() {
+        return this.occupiedPlots;
     }
 
-    public void setHomePlot(Plot plot) {
-        this.homePlot = plot;
-        this.brain.setMemory(ModMemoryTypes.HOME_PLOT.get(), this.homePlot);
+    public void occupyPlot(Plot plot) {
+        this.occupiedPlots.add(plot);
+
+        if (plot.getType() == Plot.PlotType.RESIDENTIAL) {
+            this.brain.setMemory(ModMemoryTypes.HOME_PLOT.get(), plot);
+        }
     }
 
     @Override
     public void onRemovedFromWorld() {
         super.onRemovedFromWorld();
 
-        if (this.homePlot != null) {
-            this.homePlot.refreshAllSlots();
+        for (var plot: this.occupiedPlots) {
+            plot.clearVillagerFromPlot(this);
         }
     }
 

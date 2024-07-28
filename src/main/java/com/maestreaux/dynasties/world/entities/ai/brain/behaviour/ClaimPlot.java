@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 
 import com.maestreaux.dynasties.init.ModMemoryTypes;
+import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -15,11 +16,12 @@ public class ClaimPlot<E extends AbstractDynastyVillager> extends ExtendedBehavi
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
 
     protected void start(E entity) {
-        var availablePlot = BrainUtils.getMemory(entity, ModMemoryTypes.AVAILABLE_PLOT.get());
+        var availablePlots = BrainUtils.getMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get());
 
-        if (availablePlot != null) {
-            availablePlot.getAvailableSlot().setOccupier(entity);
+        if (availablePlots != null) {
+            availablePlots.stream().filter(plot -> plot.getType() == Plot.PlotType.RESIDENTIAL).findFirst().ifPresent(entity::occupyPlot);
         }
+
     }
 
     @Override
@@ -30,7 +32,7 @@ public class ClaimPlot<E extends AbstractDynastyVillager> extends ExtendedBehavi
     static {
         MEMORY_REQUIREMENTS = ObjectArrayList.of(new Pair[]{
                 Pair.of(ModMemoryTypes.HOME_PLOT.get(), MemoryStatus.VALUE_ABSENT),
-                Pair.of(ModMemoryTypes.AVAILABLE_PLOT.get(), MemoryStatus.VALUE_PRESENT)
+                Pair.of(ModMemoryTypes.AVAILABLE_PLOTS.get(), MemoryStatus.VALUE_PRESENT)
         });
     }
 }

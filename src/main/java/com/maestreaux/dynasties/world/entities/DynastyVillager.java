@@ -1,28 +1,30 @@
 package com.maestreaux.dynasties.world.entities;
 
-import com.maestreaux.dynasties.DynastiesMod;
-import com.maestreaux.dynasties.init.ModEntityTypes;
-import com.maestreaux.dynasties.world.Plot;
-import com.maestreaux.dynasties.world.Settlement;
+import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.world.Zone;
+import com.maestreaux.dynasties.world.blocks.Tent;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.ClaimPlot;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.DoConstruction;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.GoHome;
-import com.maestreaux.dynasties.world.entities.ai.brain.sensor.AvailablePlotSensor;
+import com.maestreaux.dynasties.world.entities.ai.brain.sensor.AvailablePlotsSensor;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.*;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.tslat.smartbrainlib.api.SmartBrainOwner;
 import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
@@ -84,12 +86,38 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
         super.addAdditionalSaveData(compoundTag);
     }
 
+    private void setPosToBed(BlockPos blockPos, boolean isTent, Direction direction) {
+        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ?  0.2300D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
+
+        this.setPos(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
+    }
+
+    @Override
+    public void startSleeping(BlockPos pPos) {
+        if (this.isPassenger()) {
+            this.stopRiding();
+        }
+
+        BlockState blockstate = this.level().getBlockState(pPos);
+        if (blockstate.isBed(this.level(), pPos, this)) {
+            blockstate.setBedOccupied(this.level(), pPos, this, true);
+
+            this.setPose(Pose.SLEEPING);
+            this.setPosToBed(pPos, blockstate.is(ModBlocks.TENT.get()), blockstate.getValue(Tent.FACING));
+            this.setSleepingPos(pPos);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.hasImpulse = true;
+        }
+
+    }
+
     @Override
     public List<? extends ExtendedSensor<? extends DynastyVillager>> getSensors() {
         return ObjectArrayList.of(
-                  new AvailablePlotSensor<>(),
+                new AvailablePlotsSensor<>(),
                 new NearbyLivingEntitySensor<>(),
                 new HurtBySensor<>()
+                //new AvailableTentsSensor<>()
         );
     }
 
@@ -98,6 +126,7 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
         return BrainActivityGroup.idleTasks(
                 new ClaimPlot<>(),
                 new GoHome<>(),
+                //new SleepInTent<>(),
                 new DoConstruction<>()
         );
     }

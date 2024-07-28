@@ -32,7 +32,6 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
                 };
 
                 partitionToBuildOn.incrementConstructionCursor();
-
             }
         }
     }
