@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.init.ModSensorTypes;
 import com.maestreaux.dynasties.world.Plot;
+import com.maestreaux.dynasties.world.blocks.Tent;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -21,7 +22,7 @@ import net.tslat.smartbrainlib.util.BrainUtils;
 import java.util.Iterator;
 import java.util.List;
 
-public class AvailableTentsSensor<E extends AbstractDynastyVillager> extends PredicateSensor<Plot, E> {
+public class AvailableTentsSensor<E extends AbstractDynastyVillager> extends ExtendedSensor<E> {
     private static final List<MemoryModuleType<?>> MEMORIES;
 
 

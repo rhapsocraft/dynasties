@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.world.entities.base;
 
+import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.init.ModEntityTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
@@ -9,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -19,15 +21,19 @@ import java.util.List;
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
     protected List<Plot> occupiedPlots = new ArrayList<>();
     protected Zone homeZone;
+    protected final MarketAgent agent = new MarketAgent(this);
 
+    private final SimpleContainer inventory = new SimpleContainer(8);
 
     protected AbstractDynastyVillager(EntityType<? extends AgeableMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.setCanPickUpLoot(true);
     }
 
     protected AbstractDynastyVillager(Level pLevel, Zone homeZone) {
         this(ModEntityTypes.DYNASTY_VILLAGER.get(), pLevel);
         this.homeZone = homeZone;
+        this.setCanPickUpLoot(true);
     }
 
     public Zone getHomeZone() {
@@ -67,7 +73,11 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
 
     @Override
     public SimpleContainer getInventory() {
-        return null;
+        return this.inventory;
+    }
+
+    protected void pickUpItem(ItemEntity pItemEntity) {
+        InventoryCarrier.pickUpItem(this, this, pItemEntity);
     }
 
     @Override
@@ -77,6 +87,8 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         if(compoundTag.hasUUID("villagerdynasties:home_zone")) {
             this.homeZone = Zone.getZoneByUUID((ServerLevel) this.level(), compoundTag.getUUID("villagerdynasties:home_zone"));
         }
+
+        this.setCanPickUpLoot(true);
     }
 
     @Override
@@ -86,5 +98,10 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         if (this.homeZone != null) {
             compoundTag.putUUID("villagerdynasties:home_zone", this.homeZone.getUUID());
         }
+    }
+
+    @Override
+    public boolean isPersistenceRequired() {
+        return true;
     }
 }

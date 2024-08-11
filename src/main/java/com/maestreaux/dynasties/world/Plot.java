@@ -105,6 +105,10 @@ public class Plot {
         return this.partitions.stream().filter(part -> part.getPartitionType() == Partition.PartitionType.HOME).findFirst().orElse(null);
     }
 
+    public List<Partition> getPartitionsByType(Partition.PartitionType type) {
+        return this.partitions.stream().filter(part -> part.getPartitionType() == type).toList();
+    }
+
     public void addPartition(Partition newPartition) {
         newPartition.setParentPlot(this);
         this.partitions.add(newPartition);

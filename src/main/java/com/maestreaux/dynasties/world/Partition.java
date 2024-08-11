@@ -6,6 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class Partition {
     private Building construction;
     private Plot parentPlot;
     private List<Predicate<Partition>> placementPredicates;
+    private Rotation rotation = Rotation.NONE;
 
     public Partition() {}
 
@@ -50,6 +52,14 @@ public class Partition {
     public Partition(BlockPos relativeOrigin, int width, int length, PartitionType type, Building building) {
         this(width, length, type, building, 0);
         this.setOrigin(relativeOrigin);
+    }
+
+    public void setRotation(Rotation rotation) {
+        this.rotation = rotation;
+    }
+
+    public Rotation getRotation() {
+        return this.rotation;
     }
 
     public void setParentPlot(Plot parentPlot) {
@@ -96,9 +106,19 @@ public class Partition {
         return this.width;
     }
 
+    public void setWidth(int newWidth) {
+        this.width = newWidth;
+    }
+
+    public void setLength(int newLength) {
+        this.length = newLength;
+    }
+
     public int getLength() {
         return this.length;
     }
+
+    public int getArea() {return this.length * this.width;}
 
     public void setOrigin(BlockPos newOrigin) {
         this.origin = newOrigin;

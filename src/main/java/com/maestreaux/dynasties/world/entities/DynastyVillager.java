@@ -1,12 +1,11 @@
 package com.maestreaux.dynasties.world.entities;
 
+import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.blocks.Tent;
-import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.ClaimPlot;
-import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.DoConstruction;
-import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.GoHome;
-import com.maestreaux.dynasties.world.entities.ai.brain.sensor.AvailablePlotsSensor;
+import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.*;
+import com.maestreaux.dynasties.world.entities.ai.brain.sensor.*;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
@@ -22,6 +21,9 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.*;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +32,7 @@ import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.move.MoveToWalkTarget;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
+import net.tslat.smartbrainlib.api.core.sensor.custom.NearbyItemsSensor;
 import net.tslat.smartbrainlib.api.core.sensor.vanilla.HurtBySensor;
 import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyLivingEntitySensor;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +41,7 @@ import java.util.List;
 
 public class DynastyVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastyVillager>, VillagerDataHolder {
     private static final EntityDataAccessor<VillagerData> DATA_VILLAGER_DATA;
+    private static final List<Item> DESIRED_ITEMS;
     public DynastyVillager(EntityType<DynastyVillager> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
@@ -108,7 +112,13 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
             this.setDeltaMovement(Vec3.ZERO);
             this.hasImpulse = true;
         }
+    }
 
+    @Override
+    public boolean wantsToPickUp(ItemStack pStack) {
+        var item = pStack.getItem();
+
+        return Dictionaries.VALID_SEEDS.contains(item) || DESIRED_ITEMS.contains(item);
     }
 
     @Override
@@ -116,7 +126,12 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
         return ObjectArrayList.of(
                 new AvailablePlotsSensor<>(),
                 new NearbyLivingEntitySensor<>(),
-                new HurtBySensor<>()
+                new HurtBySensor<>(),
+                new HomeContainersSensor<>(),
+                new AvailableSeedsSensor<>(),
+                new FarmlandsSensor<>(),
+                new FullyGrownCropsSensor<>(),
+                new NearbyItemsSensor<>()
                 //new AvailableTentsSensor<>()
         );
     }
@@ -125,20 +140,26 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
     public BrainActivityGroup<DynastyVillager> getIdleTasks() {
         return BrainActivityGroup.idleTasks(
                 new ClaimPlot<>(),
-                new GoHome<>(),
+                //new GoHome<>(),
                 //new SleepInTent<>(),
-                new DoConstruction<>()
+                new DoConstruction<>(),
+                new ReturnItems<>(),
+                new PickUpItems<>()
         );
     }
 
     @Override
     public BrainActivityGroup<DynastyVillager> getCoreTasks() {
         return BrainActivityGroup.coreTasks(
-                new MoveToWalkTarget<>()
+                new MoveToWalkTarget<>(),
+                new FetchSeeds<>(),
+                new HarvestCrops<>(),
+                new PlantCrops<>()
         );
     }
 
     static {
         DATA_VILLAGER_DATA = SynchedEntityData.defineId(DynastyVillager.class, EntityDataSerializers.VILLAGER_DATA);
+        DESIRED_ITEMS = List.of(Items.WHEAT, Items.BEETROOT);
     }
 }

@@ -6,6 +6,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.level.block.Mirror;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtils;
 
@@ -22,8 +23,10 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
 
             if (partitionToBuildOn != null && !partitionToBuildOn.isConstructionFinished()) {
                 var blockToPlaceInfo = partitionToBuildOn.getBlocks().get(partitionToBuildOn.getConstructionCursor());
-                var blockState = blockToPlaceInfo.state();
-                var blockPos = blockToPlaceInfo.pos().offset(partitionToBuildOn.getAbsoluteOrigin());
+                var blockState = blockToPlaceInfo.state().rotate(partitionToBuildOn.getRotation());
+
+                var zeroPos = partitionToBuildOn.getBuilding().getTemplate().getZeroPositionWithTransform(blockToPlaceInfo.pos().rotate(partitionToBuildOn.getRotation()), Mirror.NONE, partitionToBuildOn.getRotation());
+                var blockPos = zeroPos.offset(partitionToBuildOn.getAbsoluteOrigin());
 
                 if(entity.level().setBlock(blockPos, blockState, 3)) {
                     this.cooldownFor((e) -> 10);

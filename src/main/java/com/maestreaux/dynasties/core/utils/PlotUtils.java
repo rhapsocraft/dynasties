@@ -6,9 +6,11 @@ import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Rotation;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class PlotUtils {
@@ -99,7 +101,8 @@ public class PlotUtils {
 
     public static void partitionPlot(Plot plot, List<Partition> partitions) {
         var largeRect = new Rectangle(Math.abs(plot.getEndPos().getX() - plot.getStartPos().getX()) + 1, Math.abs(plot.getEndPos().getZ() - plot.getStartPos().getZ()) + 1);
-        var _partitions = partitions.stream().sorted((r1, r2) -> Integer.compare(r2.getWeight(), r1.getWeight())).toList();
+        var partitionComparator = Comparator.comparing(Partition::getArea).thenComparing(Partition::getWeight).reversed();
+        var _partitions = partitions.stream().sorted(partitionComparator).toList();
 
         List<Partition> packed = new ArrayList<>();
         List<Rectangle> freeRects = new ArrayList<>();
@@ -114,10 +117,18 @@ public class PlotUtils {
                 var correctedRectangle = fitRectangle(freeRect, newRect);
 
                 if (correctedRectangle != null) {
+                    var isRotated = correctedRectangle.height != newRect.height && correctedRectangle.width != newRect.width;
                     correctedRectangle.x = freeRect.x;
                     correctedRectangle.y = freeRect.y;
 
                     partition.setOrigin(new BlockPos(correctedRectangle.x, 0, correctedRectangle.y));
+                    partition.setWidth(correctedRectangle.width);
+                    partition.setLength(correctedRectangle.height);
+
+                    if (isRotated) {
+                        partition.setRotation(Rotation.COUNTERCLOCKWISE_90);
+                    }
+
                     packed.add(partition);
 
                     freeRects.remove(i);
