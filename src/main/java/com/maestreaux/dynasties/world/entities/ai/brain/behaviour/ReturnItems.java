@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 
 import com.maestreaux.dynasties.core.utils.AIUtils;
+import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
@@ -10,23 +11,16 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.IItemHandler;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtils;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
-
 public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBehaviour<E> {
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
 
-    private BlockEntity targetContainer = null;
-
-    private IItemHandler getItemHandler(BlockEntity container) {
-        return container.getCapability(ITEM_HANDLER).resolve().orElse(null);
-    }
+    private BaseContainerBlockEntity targetContainer = null;
 
     protected void start(E entity) {
         var containers = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
@@ -41,7 +35,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
                 var inventoryIter = itemHandlers.iterator();
 
                 if (this.targetContainer != null) {
-                    var currentInventory = getItemHandler(this.targetContainer);
+                    var currentInventory = InventoryUtils.getItemHandler(this.targetContainer);
                     int currentSlot = 0;
                     var targetPos = this.targetContainer.getBlockPos();
 
@@ -57,7 +51,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
                             if (currentSlot > (currentInventory.getSlots() - 1)) {
                                 if (inventoryIter.hasNext()) {
-                                    currentInventory = getItemHandler(inventoryIter.next());
+                                    currentInventory = InventoryUtils.getItemHandler(inventoryIter.next());
                                 } else {
                                     break;
                                 }

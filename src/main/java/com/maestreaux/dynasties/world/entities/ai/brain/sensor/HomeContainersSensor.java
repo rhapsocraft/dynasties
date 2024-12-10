@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
@@ -31,7 +32,10 @@ public class HomeContainersSensor<E extends AbstractDynastyVillager> extends Ext
 
         if (homePlot != null) {
             // TODO: HEIGHT TEMPORARY AND MAKE VALID CONTAINERS CONFIGURABLE
-            var inventories = BlockPos.betweenClosedStream(homePlot.getAbsoluteStartPos(), homePlot.getAbsoluteEndPos().offset(0, 10, 0)).map(level::getBlockEntity).filter(Objects::nonNull).filter(
+            var inventories = BlockPos.betweenClosedStream(homePlot.getAbsoluteStartPos(), homePlot.getAbsoluteEndPos().offset(0, 10, 0)).map((pos) -> {
+                var blockEntity = level.getBlockEntity(pos);
+                return blockEntity instanceof BaseContainerBlockEntity baseContainerEntity ? baseContainerEntity : null;
+            }).filter(Objects::nonNull).filter(
                     blockEntity -> blockEntity instanceof BarrelBlockEntity || blockEntity instanceof ChestBlockEntity
             ).sorted(Comparator.comparingDouble(inventory -> entity.distanceToSqr(inventory.getBlockPos().getCenter()))).toList();
 

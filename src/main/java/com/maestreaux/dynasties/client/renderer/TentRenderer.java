@@ -13,7 +13,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class TentRenderer<T extends TentBlockEntity> implements BlockEntityRenderer<TentBlockEntity> {
     private static final ResourceLocation TENT_TEXTURE = new ResourceLocation(DynastiesMod.MODID, "textures/entity/tent.png");
     private TentModel model;

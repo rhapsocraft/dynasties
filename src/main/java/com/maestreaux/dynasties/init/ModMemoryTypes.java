@@ -5,6 +5,7 @@ import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.world.Plot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
@@ -21,7 +22,7 @@ public class ModMemoryTypes {
     public static final RegistryObject<MemoryModuleType<List<Plot>>> AVAILABLE_PLOTS = MEMORY_TYPES.register("available_plots", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<BlockPos>> AVAILABLE_TENT = MEMORY_TYPES.register("available_tent", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<BlockPos>>> HOME_FARMLANDS = MEMORY_TYPES.register("home_farmlands", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<BlockEntity>>> HOME_CONTAINERS = MEMORY_TYPES.register("home_containers", () -> new MemoryModuleType<>(Optional.empty()));
+    public static final RegistryObject<MemoryModuleType<List<BaseContainerBlockEntity>>> HOME_CONTAINERS = MEMORY_TYPES.register("home_containers", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> AVAILABLE_SEEDS = MEMORY_TYPES.register("available_seeds", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<BlockPos>>> FULLY_GROWN_CROPS = MEMORY_TYPES.register("fully_grown_crops", () -> new MemoryModuleType<>(Optional.empty()));
 }

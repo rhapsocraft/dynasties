@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class MarketAgent {
@@ -18,8 +19,8 @@ public class MarketAgent {
 
     public static int BASE_PRICE = 10;
 
-    private Map<Item, Float> valuations = Map.of();
-    private Map<Item, TradeOffer> activeOffers;
+    private final Map<Item, Float> valuations = new HashMap<>();
+    private final Map<Item, TradeOffer> activeOffers = new HashMap<>();
     private final AbstractDynastyVillager entity;
     private int money = 200;
     private float foodBudget = 0.5F;
@@ -78,6 +79,10 @@ public class MarketAgent {
         }
     }
 
+    public Map<Item, TradeOffer> getActiveOffers() {
+        return this.activeOffers;
+    }
+
     public void adjustValuation(Item item) {
         var activeItemOffer = this.activeOffers.get(item);
 
@@ -108,6 +113,10 @@ public class MarketAgent {
             this.itemOffered = itemOffered;
             this.quantityOffered = quantity;
             this.priceEach = price;
+        }
+
+        public TradeOffer(MarketAgent agent, Item itemOffered, int quantity) {
+            this(agent, itemOffered, quantity, BASE_PRICE);
         }
         public Item getItemOffered() {
             return this.itemOffered;

@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.world.entities;
 
+import com.maestreaux.dynasties.client.ClientHooks;
 import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.world.Zone;
@@ -14,6 +15,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
@@ -21,12 +25,15 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.tslat.smartbrainlib.api.SmartBrainOwner;
 import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
@@ -115,6 +122,15 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
     }
 
     @Override
+    public @NotNull InteractionResult mobInteract(Player player, @NotNull InteractionHand interactionHand) {
+        if(interactionHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        if(!this.level().isClientSide()) return InteractionResult.SUCCESS;
+
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientHooks.openMerchantScreen(this));
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
     public boolean wantsToPickUp(ItemStack pStack) {
         var item = pStack.getItem();
 
@@ -144,7 +160,8 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
                 //new SleepInTent<>(),
                 new DoConstruction<>(),
                 new ReturnItems<>(),
-                new PickUpItems<>()
+                new PickUpItems<>(),
+                new StockWares<>()
         );
     }
 

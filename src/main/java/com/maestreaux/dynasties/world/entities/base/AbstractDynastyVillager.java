@@ -12,18 +12,22 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
     protected List<Plot> occupiedPlots = new ArrayList<>();
     protected Zone homeZone;
     protected final MarketAgent agent = new MarketAgent(this);
-
+    protected Map<Item, Integer> tradeSlot = new HashMap<>();
     private final SimpleContainer inventory = new SimpleContainer(8);
+    private final SimpleContainer tradeInventory = new SimpleContainer(8);
 
     protected AbstractDynastyVillager(EntityType<? extends AgeableMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -74,6 +78,35 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     @Override
     public SimpleContainer getInventory() {
         return this.inventory;
+    }
+
+    public SimpleContainer getTradeInventory() {
+        return this.tradeInventory;
+    }
+
+    public Map<Item, Integer> getTradeSlot() {
+        return this.tradeSlot;
+    }
+
+    public MarketAgent asMarketAgent() {
+        return this.agent;
+    }
+
+    public List<MarketAgent.TradeOffer> getTradeOffers() {
+
+        return this.tradeSlot.keySet().stream().map((key) -> this.agent.getActiveOffers().get(key)).toList();
+    }
+
+    @Override
+    protected void dropEquipment() {
+        super.dropEquipment();
+
+        var itemsRemoved = this.inventory.removeAllItems();
+        itemsRemoved.addAll(this.tradeInventory.removeAllItems());
+
+        for (var item: itemsRemoved) {
+            this.spawnAtLocation(item);
+        }
     }
 
     protected void pickUpItem(ItemEntity pItemEntity) {
