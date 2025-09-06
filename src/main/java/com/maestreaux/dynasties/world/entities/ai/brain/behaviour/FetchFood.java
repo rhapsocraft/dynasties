@@ -3,6 +3,7 @@ package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.core.utils.AIUtils;
+import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
@@ -14,42 +15,41 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtil;
-
 import java.util.List;
 
-public class FetchSeeds<E extends AbstractDynastyVillager> extends ExtendedBehaviour<E> {
+public class FetchFood<E extends AbstractDynastyVillager> extends ExtendedBehaviour<E> {
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
+    private ItemLocation targetFood = null;
 
-    private ItemLocation targetSeed = null;
+    @Override
+    protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
+        return !entity.getInventory().hasAnyOf(Dictionaries.FOOD) && entity.getHunger() < entity.getMaxHunger();
+    }
 
+    @Override
     protected void start(E entity) {
-        var seedLocations = BrainUtil.getMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get());
+        var foodLocations = BrainUtil.getMemory(entity, ModMemoryTypes.AVAILABLE_FOOD.get());
 
-        if (seedLocations != null) {
-            if (this.targetSeed != null) {
-                var targetPos = this.targetSeed.blockEntity.getBlockPos();
+        if (foodLocations != null) {
+            if (this.targetFood != null) {
+                var targetPos = this.targetFood.blockEntity.getBlockPos();
 
                 if (AIUtils.isCloseEnoughToTarget(entity, targetPos)) {
-                    var extractedSeeds = this.targetSeed.itemHandler.extractItem(this.targetSeed.slot, 64, false);
+                    var extractFood = this.targetFood.itemHandler.extractItem(this.targetFood.slot, 64, false);
 
 
-                    entity.getInventory().addItem(extractedSeeds);
-                    this.targetSeed = null;
+                    entity.getInventory().addItem(extractFood);
+                    this.targetFood = null;
                 } else {
                     BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
                     BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
                 }
             } else {
-                this.targetSeed = seedLocations.get(0);
+                this.targetFood = foodLocations.getFirst();
                 BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
                 BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
             }
         }
-    }
-
-    @Override
-    protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        return !entity.getInventory().hasAnyOf(Dictionaries.VALID_SEEDS);
     }
 
     @Override
@@ -59,9 +59,7 @@ public class FetchSeeds<E extends AbstractDynastyVillager> extends ExtendedBehav
 
     static {
         MEMORY_REQUIREMENTS = ObjectArrayList.of(new Pair[]{
-                Pair.of(ModMemoryTypes.AVAILABLE_SEEDS.get(), MemoryStatus.VALUE_PRESENT),
-                Pair.of(ModMemoryTypes.HOME_FARMLANDS.get(), MemoryStatus.VALUE_PRESENT)
+                Pair.of(ModMemoryTypes.AVAILABLE_FOOD.get(), MemoryStatus.VALUE_PRESENT),
         });
     }
-
 }

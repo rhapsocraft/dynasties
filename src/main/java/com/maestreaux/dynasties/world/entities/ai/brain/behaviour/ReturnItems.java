@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtil;
+
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -28,11 +29,12 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
         if (containers != null) {
             var entityInv = entity.getInventory();
+            var entityTradeInv = entity.getTradeInventory();
             var itemHandlers = containers.stream().toList();
-            var itemsToReturn = IntStream.range(0, entityInv.getContainerSize()).iterator();
+            var inventories = List.of(entityInv, entityTradeInv);
 
             if (!itemHandlers.isEmpty()) {
-                ItemStack itemToReturn;
+                ItemStack itemStackToReturn;
                 var inventoryIter = itemHandlers.iterator();
 
                 if (this.targetContainer != null) {
@@ -41,24 +43,34 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
                     var targetPos = this.targetContainer.getBlockPos();
 
                     if (AIUtils.isCloseEnoughToTarget(entity, targetPos)) {
-                        while (itemsToReturn.hasNext()) {
-                            var currentItemSlot = itemsToReturn.next();
-                            itemToReturn = entityInv.getItem(currentItemSlot);
+                        for (var inventory : inventories) {
+                            var inventorySlotsIterator = IntStream.range(0, inventory.getContainerSize()).iterator();
+                            while (inventorySlotsIterator.hasNext()) {
+                                var currentItemSlot = inventorySlotsIterator.next();
+                                itemStackToReturn = inventory.getItem(currentItemSlot);
+                                var item = itemStackToReturn.getItem();
 
-                            while (itemToReturn != ItemStack.EMPTY && currentSlot <= (currentInventory.getSlots() - 1)) {
-                                itemToReturn = currentInventory.insertItem(currentSlot++, itemToReturn, false);
-                                entityInv.setItem(currentItemSlot, itemToReturn);
-                            }
-
-                            if (currentSlot > (currentInventory.getSlots() - 1)) {
-                                if (inventoryIter.hasNext()) {
-                                    currentInventory = InventoryUtils.getItemHandler(inventoryIter.next());
-                                } else {
-                                    break;
+                                while (itemStackToReturn != ItemStack.EMPTY && currentSlot <= (currentInventory.getSlots() - 1)) {
+                                    itemStackToReturn = currentInventory.insertItem(currentSlot++, itemStackToReturn, false);
+                                    inventory.setItem(currentItemSlot, itemStackToReturn);
                                 }
-                            }
 
-                            currentSlot = 0;
+                                if (inventory == entityTradeInv) {
+                                    var marketAgent = entity.asMarketAgent();
+                                    marketAgent.removeOffer(item);
+                                    marketAgent.adjustValuation(item);
+                                }
+
+                                if (currentSlot > (currentInventory.getSlots() - 1)) {
+                                    if (inventoryIter.hasNext()) {
+                                        currentInventory = InventoryUtils.getItemHandler(inventoryIter.next());
+                                    } else {
+                                        break;
+                                    }
+                                }
+
+                                currentSlot = 0;
+                            }
                         }
 
                         BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
@@ -76,7 +88,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        return !entity.getInventory().isEmpty() ;
+        return !entity.getInventory().isEmpty() || !entity.getTradeInventory().isEmpty();
     }
 
     @Override

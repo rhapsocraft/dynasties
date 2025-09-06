@@ -25,4 +25,5 @@ public class ModMemoryTypes {
     public static final RegistryObject<MemoryModuleType<List<BaseContainerBlockEntity>>> HOME_CONTAINERS = MEMORY_TYPES.register("home_containers", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> AVAILABLE_SEEDS = MEMORY_TYPES.register("available_seeds", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<BlockPos>>> FULLY_GROWN_CROPS = MEMORY_TYPES.register("fully_grown_crops", () -> new MemoryModuleType<>(Optional.empty()));
+    public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> AVAILABLE_FOOD = MEMORY_TYPES.register("available_food", () -> new MemoryModuleType<>(Optional.empty()));
 }

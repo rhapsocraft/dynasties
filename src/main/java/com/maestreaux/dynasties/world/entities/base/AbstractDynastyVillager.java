@@ -6,8 +6,10 @@ import com.maestreaux.dynasties.init.ModEntityTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
+import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
@@ -27,11 +29,19 @@ import java.util.List;
 import java.util.Map;
 
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
+    private static final EntityDataAccessor<Boolean> IS_FLEEING = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_EATING = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializers.BOOLEAN);
+
     protected static final EntityDataAccessor<List<MarketAgent.TradeOffer>> TRADE_OFFERS = SynchedEntityData.defineId(AbstractDynastyVillager.class, ModEntityDataSerializers.TRADE_OFFERS.get());
     protected List<Plot> occupiedPlots = new ArrayList<>();
     protected Zone homeZone;
+    protected List<Plot.SlotJob> jobs = new ArrayList<>();
     protected final MarketAgent agent = new MarketAgent(this);
     protected Map<Item, Integer> tradeSlot = new HashMap<>();
+
+    protected int hunger = 2_000;
+    protected int maxHunger = 15_000;
+
     private final SimpleContainer inventory = new SimpleContainer(8);
     private final SimpleContainer tradeInventory = new SimpleContainer(8);
 
@@ -49,6 +59,20 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     protected void defineSynchedData(SynchedEntityData.Builder synchedData) {
         super.defineSynchedData(synchedData);
         synchedData.define(TRADE_OFFERS, new ArrayList<>());
+        synchedData.define(IS_FLEEING, false);
+        synchedData.define(IS_EATING, false);
+    }
+
+    public boolean isFleeing() {
+        return this.entityData.get(IS_FLEEING);
+    }
+
+    public boolean isEating() {
+        return this.entityData.get(IS_EATING);
+    }
+
+    public void setIsEating(boolean isEating) {
+        this.entityData.set(IS_EATING, isEating);
     }
 
     public void setTradeOffers(List<MarketAgent.TradeOffer> newList) {
@@ -80,11 +104,23 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
 
     public void occupyPlot(Plot plot) {
         this.occupiedPlots.add(plot);
-        plot.getAvailableSlot().setOccupier(this);
+        var slot = plot.getAvailableSlot();
+        slot.setOccupier(this);
+
+        this.jobs.add(slot.getJob());
 
         if (plot.getType() == Plot.PlotType.RESIDENTIAL) {
             this.brain.setMemory(ModMemoryTypes.HOME_PLOT.get(), plot);
         }
+    }
+
+    public List<Plot.SlotJob> getJobs() {
+        return this.jobs;
+    }
+
+    // TODO: TEMPORARY
+    public Plot.SlotJob getJob() {
+        return !this.jobs.isEmpty() ? this.jobs.getFirst() : null;
     }
 
     @Override
@@ -94,6 +130,37 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         for (var plot: this.occupiedPlots) {
             plot.clearVillagerFromPlot(this);
         }
+    }
+
+    public void setHunger(int newHungerValue) {
+        if (newHungerValue > this.maxHunger) {
+            this.hunger = this.maxHunger;
+        } else if (newHungerValue < 0) {
+            this.hunger = 0;
+        } else {
+            this.hunger = newHungerValue;
+        }
+    }
+
+    public int getHunger() {
+        return this.hunger;
+    }
+
+    public int getMaxHunger() {
+        return this.maxHunger;
+    }
+
+    public void doHungerTick() {
+        if(this.hunger > 0) {
+             this.hunger -= 1;
+        }
+    }
+
+    @Override
+    public void tick() {
+        this.doHungerTick();
+
+        super.tick();
     }
 
     @Nullable
@@ -136,6 +203,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         InventoryCarrier.pickUpItem(level, this, this, pItemEntity);
     }
 
+
     @Override
     public void readAdditionalSaveData(CompoundTag compoundTag) {
         super.readAdditionalSaveData(compoundTag);
@@ -143,6 +211,8 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         if(compoundTag.hasUUID("villagerdynasties:home_zone")) {
             this.homeZone = Zone.getZoneByUUID((ServerLevel) this.level(), compoundTag.getUUID("villagerdynasties:home_zone"));
         }
+
+        this.hunger = compoundTag.getInt("villagerdynasties:hunger");
 
         this.setCanPickUpLoot(true);
     }
@@ -154,10 +224,26 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         if (this.homeZone != null) {
             compoundTag.putUUID("villagerdynasties:home_zone", this.homeZone.getUUID());
         }
+
+        compoundTag.putInt("villagerdynasties:hunger", this.hunger);
     }
 
     @Override
     public boolean isPersistenceRequired() {
         return true;
+    }
+
+    public enum DynastiesVillagerPose {
+        CROSSED_ARMS,
+        ATTACKING,
+        BOW_HOLD,
+        BOW_AND_ARROW,
+        CROSSBOW_HOLD,
+        CROSSBOW_CHARGE,
+        BLOCK_HOLD,
+        NEUTRAL;
+
+        private DynastiesVillagerPose() {
+        }
     }
 }

@@ -17,4 +17,10 @@ public class Dictionaries {
             Items.WHEAT_SEEDS,
             Items.BEETROOT_SEEDS
     ));
+
+    public static Set<Item> FOOD = new HashSet<>(List.of(
+            Items.POTATO,
+            Items.CARROT
+    ));
 }
+

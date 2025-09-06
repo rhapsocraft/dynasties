@@ -48,30 +48,33 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
                     var itemInLocation = itemLocation.stack.getItem();
                     var canAddItem = tradeInventory.canAddItem(itemLocation.stack);
 
-                    if (canAddItem) {
+                    if (canAddItem && itemLocation.stack != ItemStack.EMPTY) {
                         int itemSlot = tradeSlot.computeIfAbsent(itemInLocation, (itemToTrade) -> IntStream.range(0, tradeInventory.getContainerSize()).filter(slot -> tradeInventory.getItem(slot) == ItemStack.EMPTY).findFirst().orElse(-1));
 
                         if (itemSlot != -1) {
                             var itemStackInSlot = tradeInventory.getItem(itemSlot);
-
-                            var stackSizeRemaining = itemStackInSlot == ItemStack.EMPTY ?  itemToSell.getDefaultMaxStackSize() : itemStackInSlot.getMaxStackSize() - itemStackInSlot.getCount();
+                            var stackSizeRemaining = itemStackInSlot == ItemStack.EMPTY ? itemToSell.getDefaultMaxStackSize() : itemStackInSlot.getMaxStackSize() - itemStackInSlot.getCount();
 
                             // We have no storage for this item. Evaluate next item
                             if (stackSizeRemaining == 0) {
                                 break;
                             }
 
-                            var amountToAdd = Math.min(stackSizeRemaining, itemLocation.stack.getCount());
+                            var surplus = Math.min(Math.max((entity.asMarketAgent().calculateSurplus(containers, itemInLocation)) - itemStackInSlot.getCount(), 0), itemLocation.stack.getCount());
+                            var amountToAdd = Math.min(stackSizeRemaining, surplus);
 
                             var itemStackToAdd = itemLocation.itemHandler.extractItem(itemLocation.slot, amountToAdd, false);
 
-                            if (itemStackInSlot.getItem() != itemToSell) {
-                                tradeInventory.setItem(itemSlot, itemStackToAdd);
-                            } else {
-                                itemStackInSlot.grow(amountToAdd);
+                            if (itemStackToAdd != ItemStack.EMPTY) {
+                                if (itemStackInSlot.getItem() != itemToSell) {
+                                    tradeInventory.setItem(itemSlot, itemStackToAdd);
+                                } else {
+                                    itemStackInSlot.grow(amountToAdd);
+                                }
+
+                                marketAgent.updateStock(tradeInventory.getItem(itemSlot), amountToAdd);
                             }
 
-                            marketAgent.updateStock(tradeInventory.getItem(itemSlot), amountToAdd);
                             // activeItemOffer.setQuantity(activeItemOffer.getQuantityOffered() + amountToAdd);
                         }
                     } else {

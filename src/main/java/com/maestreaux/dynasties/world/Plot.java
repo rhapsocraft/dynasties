@@ -64,6 +64,10 @@ public class Plot {
         slots.add(new Slot(this));
     }
 
+    public void addSlot(SlotJob job) {
+        slots.add(new Slot(this, job));
+    }
+
     public BlockPos getStartPos() {
         return this.startPos;
     }
@@ -104,6 +108,10 @@ public class Plot {
         for (var occupiedSlot : occupiedSlots) {
             occupiedSlot.refreshSlot();
         }
+    }
+
+    public Slot getSlotByVillager(AbstractDynastyVillager villager) {
+        return this.slots.stream().filter(slot -> slot.occupiedBy == villager).findFirst().orElse(null);
     }
 
     // TODO: Temporary
@@ -225,6 +233,10 @@ public class Plot {
             this.occupiedBy = villager;
         }
 
+        public SlotJob getJob() {
+            return this.job;
+        }
+
         public boolean isOccupiedBy(AbstractDynastyVillager villager) {
             if (this.occupiedBy != null) {
                 return this.occupiedBy == villager;
@@ -237,6 +249,10 @@ public class Plot {
             if (this.occupiedBy != null) {
                 tag.putUUID("villagerdynasties:slot_occupier",this.occupiedBy.getUUID());
             }
+
+            if (this.job != null) {
+                tag.putString("villagerdynasties:slot_job", this.job.name());
+            }
         }
 
         public void load(CompoundTag tag) {
@@ -248,6 +264,9 @@ public class Plot {
                     this.occupiedBy.occupyPlot(this.parentPlot);
                 }
             }
+
+            var jobTag = tag.getString("villagerdynasties:slot_job");
+            this.job = SlotJob.valueOf(jobTag);
         }
     }
 

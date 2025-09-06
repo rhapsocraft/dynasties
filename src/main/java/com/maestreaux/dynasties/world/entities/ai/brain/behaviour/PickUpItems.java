@@ -49,6 +49,7 @@ public class PickUpItems<E extends AbstractDynastyVillager> extends ExtendedBeha
         }
     }
 
+
     @Override
     protected List<Pair<MemoryModuleType<?>, MemoryStatus>> getMemoryRequirements() {
         return MEMORY_REQUIREMENTS;

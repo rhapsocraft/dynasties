@@ -50,6 +50,9 @@ public class DebugPlottingToolItem extends Item {
                         var startPosOffset = this.currentPlotStartPos.subtract(parentZone.getCenter());
                         var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESIDENTIAL);
 
+                        newPlot.addSlot(Plot.SlotJob.TRADER);
+                        newPlot.addSlot(Plot.SlotJob.WORKER);
+
                         PlotUtils.debugSetPartitions(newPlot);
 
                         var addPlotPacket = new CAddPlot(parentZone, newPlot);

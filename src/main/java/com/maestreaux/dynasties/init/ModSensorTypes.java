@@ -15,4 +15,5 @@ public class ModSensorTypes {
     public static final RegistryObject<SensorType<HomeContainersSensor<?>>> HOME_CONTAINERS = SENSOR_TYPES.register("home_containers", () -> new SensorType<>(HomeContainersSensor::new));
     public static final RegistryObject<SensorType<AvailableSeedsSensor<?>>> AVAILABLE_SEEDS = SENSOR_TYPES.register("home_storages", () -> new SensorType<>(AvailableSeedsSensor::new));
     public static final RegistryObject<SensorType<FullyGrownCropsSensor<?>>> FULLY_GROWN_CROPS = SENSOR_TYPES.register("fully_grown_crops", () -> new SensorType<>(FullyGrownCropsSensor::new));
+    public static final RegistryObject<SensorType<AvailableFoodSensor<?>>> AVAILABLE_FOOD = SENSOR_TYPES.register("available_food", () -> new SensorType<>(AvailableFoodSensor::new));
 }

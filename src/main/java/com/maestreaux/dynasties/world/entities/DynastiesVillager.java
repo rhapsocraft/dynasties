@@ -3,6 +3,7 @@ package com.maestreaux.dynasties.world.entities;
 import com.maestreaux.dynasties.client.ClientHooks;
 import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.init.ModBlocks;
+import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.blocks.Tent;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.*;
@@ -13,10 +14,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AnimationState;
@@ -40,9 +39,9 @@ import net.minecraftforge.fml.DistExecutor;
 import net.tslat.smartbrainlib.api.SmartBrainOwner;
 import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
+import net.tslat.smartbrainlib.api.core.behaviour.AllApplicableBehaviours;
 import net.tslat.smartbrainlib.api.core.behaviour.FirstApplicableBehaviour;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.look.LookAtTarget;
-import net.tslat.smartbrainlib.api.core.behaviour.custom.move.InteractWithDoor;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.move.MoveToWalkTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.target.SetPlayerLookTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.target.TargetOrRetaliate;
@@ -59,17 +58,26 @@ import java.util.Map;
 
 @SuppressWarnings("unchecked")
 public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
-    private static final EntityDataAccessor<Boolean> IS_FLEEING = SynchedEntityData.defineId(DynastiesVillager.class, EntityDataSerializers.BOOLEAN);
     private static final List<Item> DESIRED_ITEMS;
+    private final int tickOffset =  Mth.ceil(Math.random() * 20);
+
+    // TODO: TEMPORARY NOBILITY FLAG
+    public boolean isNobility = false;
 
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState fleeAnimationState = new AnimationState();
     public final AnimationState idleFaceAnimationState = new AnimationState();
-
+    public final AnimationState eatAnimationState = new AnimationState();
+    public final AnimationState fallAnimationState = new AnimationState();
+    public final AnimationState bounceAnimationState = new AnimationState();
+    public final AnimationState turnRightAnimationState = new AnimationState();
+    public final AnimationState turnLeftAnimationState = new AnimationState();
+    public final AnimationState swingAnimationState = new AnimationState();
 
     public DynastiesVillager(EntityType<DynastiesVillager> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
+        ((GroundPathNavigation) this.getNavigation()).setCanWalkOverFences(true);
     }
 
     public DynastiesVillager(Level pLevel, Zone homeZone) {
@@ -91,24 +99,36 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return Mob.createMobAttributes().add(Attributes.MOVEMENT_SPEED, 0.5).add(Attributes.FOLLOW_RANGE, 48.0);
     }
 
-    protected void defineSynchedData(SynchedEntityData.Builder synchedData) {
-        super.defineSynchedData(synchedData);
-        synchedData.define(IS_FLEEING, false);
+    public boolean isFalling() {
+        return this.getDeltaMovement().y < -0.35F;
     }
 
     @Override
     public void tick() {
+        this.updateSwingTime();
+
         if(level().isClientSide()) {
             this.idleAnimationState.animateWhen(!this.walkAnimation.isMoving(), this.tickCount);
             this.fleeAnimationState.animateWhen(this.isFleeing(), this.tickCount);
-            this.idleFaceAnimationState.animateWhen(true, this.tickCount);
+            this.eatAnimationState.animateWhen(this.isEating(), this.tickCount);
+            this.idleFaceAnimationState.animateWhen(true, this.tickCount + this.tickOffset);
+
+            this.swingAnimationState.animateWhen(this.swinging, this.tickCount);
+
+            if (this.onGround() && this.fallAnimationState.isStarted()) {
+                this.bounceAnimationState.start(this.tickCount);
+            }
+
+//            if (this.yBodyRotO < this.yBodyRot && !this.turnRightAnimationState.isStarted()) {
+//                this.turnRightAnimationState.startIfStopped(this.tickCount);
+//            } else if (this.yBodyRotO > this.yBodyRot && !this.turnLeftAnimationState.isStarted()) {
+//                this.turnLeftAnimationState.startIfStopped(this.tickCount);
+//            }
+
+            this.fallAnimationState.animateWhen(isFalling(), this.tickCount);
         }
 
         super.tick();
-    }
-
-    public boolean isFleeing() {
-        return this.entityData.get(IS_FLEEING);
     }
 
     @Override
@@ -177,7 +197,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new FullyGrownCropsSensor<>(),
                 new NearbyItemsSensor<>(),
                 new NearbyPlayersSensor<>(),
-                new AvailableTentsSensor<>()
+                new AvailableTentsSensor<>(),
+                new AvailableFoodSensor<>()
         );
     }
 
@@ -185,7 +206,9 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.idleTasks(
                 //new GoHome<>(),
                 new TargetOrRetaliate<>(),
-                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>())
+                new FetchFood<>(),
+                new FirstApplicableBehaviour<>(new EatFood<>(), new PickUpItems<>(), new ReturnItems<>())
+
         );
     }
 
@@ -194,7 +217,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.coreTasks(
                 new SetPlayerLookTarget<>(),
                 new LookAtTarget<>(),
-                new InteractWithDoor<>().holdDoorsOpenFor((entity, living, doorPos) -> false),
+                new InteractWithBarrier<>(),
                 new MoveToWalkTarget<>(),
                 new ClaimPlot<>(),
                 new DoConstruction<>()
@@ -203,17 +226,26 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 
     private BrainActivityGroup<DynastiesVillager> getWorkTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(11).behaviours(
-                new StockWares<>(),
-                new FetchSeeds<>(),
-                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
-                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
+                new FirstApplicableBehaviour<>(
+                        new AllApplicableBehaviours<>(
+                                new GoHome<>(),
+                                new StockWares<>()
+                        ).startCondition((villager) -> villager.getJob() == Plot.SlotJob.TRADER),
+                        new AllApplicableBehaviours<>(
+                                new FetchSeeds<>(),
+                                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
+                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
+                        ).startCondition((villager) -> villager.getJob() == Plot.SlotJob.WORKER)
+                )
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getRestTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.REST).priority(1).behaviours(
                 new SleepInTent<>(),
-                new GoHome<>()
+                //new GoHome<>(),
+                new ReturnItems<>().startCondition((villager) -> villager.getJob() == Plot.SlotJob.WORKER),
+                new FirstApplicableBehaviour<>(new ReturnItems<>(), new AdjustValuationsAndPrices<>()).startCondition((villager) -> villager.getJob() == Plot.SlotJob.TRADER)
         );
     }
 

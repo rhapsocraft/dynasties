@@ -158,6 +158,7 @@ public class Partition {
 
         compoundTag.putInt("villagerdynasties:construction_cursor", this.constructionCursor);
         compoundTag.putString("villagerdynasties:partition_type", this.type.name());
+        compoundTag.putString("villagerdynasties:partition_rotation", this.rotation.getSerializedName());
 
         var buildingKey = ModBuildings.BUILDINGS_REGISTRY.get().getKey(this.construction);
 
@@ -172,6 +173,8 @@ public class Partition {
         this.width = compoundTag.getInt("villagerdynasties:partition_width");
         this.length = compoundTag.getInt("villagerdynasties:partition_length");
         this.type = PartitionType.valueOf(compoundTag.getString("villagerdynasties:partition_type"));
+
+        this.rotation = Rotation.valueOf(compoundTag.getString("villagerdynasties:partition_rotation"));
 
         var buildingKey = ResourceLocation.parse(compoundTag.getString("villagerdynasties:building"));
         this.construction = ModBuildings.BUILDINGS_REGISTRY.get().getValue(buildingKey);

@@ -6,6 +6,7 @@ import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.world.Partition;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
+import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.maestreaux.dynasties.world.items.debug.DebugPlottingToolItem;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -25,6 +26,8 @@ import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -147,11 +150,15 @@ public class ZoneRenderer {
                     pBlue = 15.5f;
                 }
 
-                var startPos = new Vector3f((float) lastSelectedPos.getCenter().x, lastSelectedPos.getY(), (float) lastSelectedPos.getCenter().z);
-                var endPos = new Vector3f((float) blockPosLookingAt.getCenter().x, blockPosLookingAt.getY(), (float) blockPosLookingAt.getCenter().z);
+                var startPos = new Vector3f(Math.max(blockPosLookingAt.getX() + 1.0F, lastSelectedPos.getX() + 1.0F), lastSelectedPos.getY(), Math.max(blockPosLookingAt.getZ() + 1.0F, lastSelectedPos.getZ() + 1.0F));
+                var endPos = new Vector3f(Math.min(blockPosLookingAt.getX(), lastSelectedPos.getX()), lastSelectedPos.getY(), Math.min(blockPosLookingAt.getZ(), lastSelectedPos.getZ()));
 
                 VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.debugQuads());
                 ShapeRenderer.renderFace(poseStack, vertexConsumer, Direction.UP, startPos.x,  startPos.y + 1.1F, startPos.z, endPos.x, startPos.y + 1.1F, endPos.z, pRed, pGreen, pBlue, 15.5f);
+
+                VertexConsumer linesVertexConsumer = bufferSource.getBuffer(RenderType.lines());
+                ShapeRenderer.renderLineBox(poseStack, linesVertexConsumer, startPos.x,  startPos.y + 1.1F, startPos.z, endPos.x, startPos.y + 1.1F, endPos.z, pRed, pGreen, pBlue, 15.9f);
+
                 poseStack.popPose();
                 bufferSource.endBatch(RenderType.debugQuads());
             }
@@ -178,6 +185,12 @@ public class ZoneRenderer {
 
             drawPartitions(matrixStack, camera, bufferSource, plot);
         }
+    }
+
+    public static void drawVillagerInfo(PoseStack matrixStack, Camera camera,  MultiBufferSource.BufferSource bufferSource) {
+        Minecraft minecraft = Minecraft.getInstance();
+        var player = minecraft.player;
+
     }
 
     public static void renderZone(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource) {

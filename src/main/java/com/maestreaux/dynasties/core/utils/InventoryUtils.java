@@ -35,4 +35,15 @@ public class InventoryUtils {
 
         return itemLocationMap;
     }
+
+    public static int getItemSupply(List<? extends BaseContainerBlockEntity> containers, Item item) {
+        var itemLocationsMap = getItemLocations(containers, Set.of(item));
+        var itemLocations = itemLocationsMap.get(item);
+
+        if (itemLocations != null && !itemLocations.isEmpty()) {
+            return itemLocations.stream().mapToInt(itemLocation -> itemLocation.stack.getCount()).sum();
+        }
+
+        return 0;
+    }
 }

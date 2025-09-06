@@ -1,14 +1,20 @@
 package com.maestreaux.dynasties.core;
 
+import com.maestreaux.dynasties.core.utils.InventoryUtils;
+import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MarketAgent {
@@ -28,6 +34,7 @@ public class MarketAgent {
     private final AbstractDynastyVillager entity;
     private int money = 200;
     private float foodBudget = 0.5F;
+    public long valuationsLastUpdated = 0;
 
     public MarketAgent(AbstractDynastyVillager villager) {
         this.entity = villager;
@@ -41,6 +48,10 @@ public class MarketAgent {
         return this.money;
     }
 
+    public Map<Item, Float> getValuations() {
+        return this.valuations;
+    }
+
     // LET ME COOK
     public float getAverageValuations() {
         var values = valuations.entrySet();
@@ -50,9 +61,30 @@ public class MarketAgent {
                     var weight = MARKETABLE_ITEMS.get(entry.getKey());
                     var valuation = entry.getValue();
 
+                    if (weight == null) {
+                        weight = 1F;
+                    }
+
                     return valuation * weight;
                 }
         ).reduce(Float::sum).orElse(0F) / values.size() : 1F;
+    }
+
+    public int getDesiredSupply(Item item) {
+        var itemValuation = this.valuations.get(item);
+
+        if (itemValuation == null) {
+            itemValuation = 1.0F;
+        }
+
+        return Math.round(32 * itemValuation);
+    }
+
+    public int calculateSurplus(List<? extends BaseContainerBlockEntity> containers, Item item) {
+        var supply = InventoryUtils.getItemSupply(containers, item);
+        var desiredSupply = getDesiredSupply(item);
+
+        return supply - desiredSupply;
     }
 
     public void purchaseFrom(TradeOffer offer, int quantity) {
@@ -71,6 +103,11 @@ public class MarketAgent {
         var offer = this.activeOffers.computeIfAbsent(itemToSell.getItem(), (item) -> new MarketAgent.TradeOffer(this, itemToSell));
         offer.setItemOffered(itemToSell);
         offer.setQuantity(offer.quantityOffered + quantity);
+        this.entity.updateTradeOffers();
+    }
+
+    public void removeOffer(Item item) {
+        this.activeOffers.remove(item);
         this.entity.updateTradeOffers();
     }
 
@@ -132,6 +169,9 @@ public class MarketAgent {
         public TradeOffer(MarketAgent agent, ItemStack itemOffered, int quantity, int price) {
             this(itemOffered, quantity, 0, price);
             this.agent = agent;
+
+            this.agent.valuations.computeIfAbsent(itemOffered.getItem(), (itemToValue) -> MARKETABLE_ITEMS.get(itemToValue) * this.agent.getAverageValuations());
+
         }
 
         public TradeOffer(MarketAgent agent, ItemStack itemOffered) {
@@ -197,7 +237,7 @@ public class MarketAgent {
 
                 this.agent.valuations.compute(item, (itemToValue, currentValuation) -> {
                     var valuation = currentValuation == null ? MARKETABLE_ITEMS.get(itemToValue) * this.agent.getAverageValuations() : currentValuation;
-                    return valuation * 1.01F;
+                    return valuation * (1.0F + (0.005F * actualQuantity));
                 });
 
                 entity.updateTradeOffers();
