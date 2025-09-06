@@ -22,7 +22,7 @@ public class ProcurementsRequirement implements Production.IRequirements {
     @Override
     public float getCost(AbstractDynastyVillager villager) {
         float cost = 0.0F;
-        var valuations = villager.asMarketAgent().getValuations();
+        var valuations = villager.getSimEntity().asMarketAgent().getValuations();
 
         for (var itemCount : this.productionRecipeMap.entrySet()) {
             cost += valuations.get(itemCount.getKey()) * itemCount.getValue();

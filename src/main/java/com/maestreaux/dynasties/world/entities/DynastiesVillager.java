@@ -2,13 +2,11 @@ package com.maestreaux.dynasties.world.entities;
 
 import com.maestreaux.dynasties.client.ClientHooks;
 import com.maestreaux.dynasties.core.Dictionaries;
+import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
 import com.maestreaux.dynasties.init.ModBlocks;
-import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.blocks.Tent;
-import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.*;
 import com.maestreaux.dynasties.world.entities.ai.brain.schedule.BasicSchedule;
-import com.maestreaux.dynasties.world.entities.ai.brain.sensor.*;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
@@ -39,22 +37,13 @@ import net.minecraftforge.fml.DistExecutor;
 import net.tslat.smartbrainlib.api.SmartBrainOwner;
 import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
-import net.tslat.smartbrainlib.api.core.behaviour.AllApplicableBehaviours;
-import net.tslat.smartbrainlib.api.core.behaviour.FirstApplicableBehaviour;
-import net.tslat.smartbrainlib.api.core.behaviour.custom.look.LookAtTarget;
-import net.tslat.smartbrainlib.api.core.behaviour.custom.move.MoveToWalkTarget;
-import net.tslat.smartbrainlib.api.core.behaviour.custom.target.SetPlayerLookTarget;
-import net.tslat.smartbrainlib.api.core.behaviour.custom.target.TargetOrRetaliate;
 import net.tslat.smartbrainlib.api.core.schedule.SmartBrainSchedule;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.api.core.sensor.custom.NearbyItemsSensor;
-import net.tslat.smartbrainlib.api.core.sensor.vanilla.HurtBySensor;
-import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyLivingEntitySensor;
-import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyPlayersSensor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings("unchecked")
 public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
@@ -77,9 +66,20 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         ((GroundPathNavigation) this.getNavigation()).setCanWalkOverFences(true);
     }
 
-    public DynastiesVillager(Level pLevel, Zone homeZone) {
-        super(pLevel, homeZone);
+    public DynastiesVillager(ServerLevel serverLevel, Zone homeZone) {
+        super(serverLevel);
+
+        this.simEntity.setHomeZone(homeZone);
+
         ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
+    }
+
+    public DynastiesVillager(ServerLevel serverLevel) {
+        super(serverLevel);
+    }
+
+    public DynastiesVillager(ServerLevel serverLevel, SimulatedVillagerEntity simEntity) {
+        super(serverLevel, simEntity);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 
     @Override
     protected void customServerAiStep(@NotNull ServerLevel level) {
-        tickBrain(this);
+        // tickBrain(this);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -139,7 +139,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     }
 
     private void setPosToBed(BlockPos blockPos, boolean isTent, Direction direction) {
-        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ? 0.6875D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
+        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
 
         this.setPos(blockPos.getX() + offset.x, blockPos.getY(), blockPos.getZ() + offset.z);
     }
@@ -185,89 +185,89 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     @Override
     public List<? extends ExtendedSensor<? extends DynastiesVillager>> getSensors() {
         return ObjectArrayList.of(
-                new AvailablePlotsSensor<>(),
-                new NearbyLivingEntitySensor<>(),
-                new HurtBySensor<>(),
-                new HomeContainersSensor<>(),
-                new AvailableSeedsSensor<>(),
-                new FarmlandsSensor<>(),
-                new FullyGrownCropsSensor<>(),
-                new NearbyItemsSensor<>(),
-                new NearbyPlayersSensor<>(),
-                new AvailableTentsSensor<>(),
-                new AvailableFoodSensor<>(),
-                new AvailableMealSensor<>(),
-                new LivestockSensor<>(),
-                new HomeCookingPotSensor<>(),
-                new IngredientsSensor<>(),
-                new BestMealSensor<>(),
-                new ProductionSensor<>()
+//                new AvailablePlotsSensor<>(),
+//                new NearbyLivingEntitySensor<>(),
+//                new HurtBySensor<>(),
+//                new HomeContainersSensor<>(),
+//                new AvailableSeedsSensor<>(),
+//                new FarmlandsSensor<>(),
+//                new FullyGrownCropsSensor<>(),
+//                new NearbyItemsSensor<>(),
+//                new NearbyPlayersSensor<>(),
+//                new AvailableTentsSensor<>(),
+//                new AvailableFoodSensor<>(),
+//                new AvailableMealSensor<>(),
+//                new LivestockSensor<>(),
+//                new HomeCookingPotSensor<>(),
+//                new IngredientsSensor<>(),
+//                new BestMealSensor<>(),
+//                new ProductionSensor<>()
         );
     }
 
     public BrainActivityGroup<DynastiesVillager> getIdleTasks() {
         return BrainActivityGroup.idleTasks(
-                //new GoHome<>(),
-                new TargetOrRetaliate<>(),
-                new FirstApplicableBehaviour<>(new CollectTaxes<>().startCondition(AbstractDynastyVillager::isNobility), new EatFood<>(),
-                        new FetchMeal<>(), new FetchFood<>(), new PickUpItems<>(), new ReturnItems<>())
+//                new GoHome<>(),
+//                new TargetOrRetaliate<>(),
+//                new FirstApplicableBehaviour<>(new CollectTaxes<>().startCondition(AbstractDynastyVillager::isNobility), new EatFood<>(),
+//                        new FetchMeal<>(), new FetchFood<>(), new PickUpItems<>(), new ReturnItems<>())
         );
     }
 
     @Override
     public BrainActivityGroup<DynastiesVillager> getCoreTasks() {
         return BrainActivityGroup.coreTasks(
-                new SetPlayerLookTarget<>(),
-                new LookAtTarget<>(),
-                new InteractWithBarrier<>(),
-                new MoveToWalkTarget<>(),
-                new ClaimPlot<>(),
-                new DoConstruction<>().startCondition((villager) -> !villager.isNobility()),
-                new FirstApplicableBehaviour<>(new ReturnItems<>(), new GoHome<>()).startCondition(AbstractDynastyVillager::isNobility)
+//                new SetPlayerLookTarget<>(),
+//                new LookAtTarget<>(),
+//                new InteractWithBarrier<>(),
+//                new MoveToWalkTarget<>(),
+//                new ClaimPlot<>(),
+//                new DoConstruction<>().startCondition((villager) -> !villager.isNobility()),
+//                new FirstApplicableBehaviour<>(new ReturnItems<>(), new GoHome<>()).startCondition(AbstractDynastyVillager::isNobility)
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getMeetTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.MEET).priority(11).behaviours(
-                new FirstApplicableBehaviour<>(
-                        new AllApplicableBehaviours<>(
-                                new GoToMarket<>(),
-                                new StockWares<>()
-                        ).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER),
-                        new AllApplicableBehaviours<>(
-                                new FetchSeeds<>(),
-                                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
-                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
-                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
-                        new AllApplicableBehaviours<>(
-                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
-                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
-                )
+//                new FirstApplicableBehaviour<>(
+//                        new AllApplicableBehaviours<>(
+//                                new GoToMarket<>(),
+//                                new StockWares<>()
+//                        ).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER),
+//                        new AllApplicableBehaviours<>(
+//                                new FetchSeeds<>(),
+//                                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
+//                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
+//                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+//                        new AllApplicableBehaviours<>(
+//                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
+//                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
+//                )
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getWorkTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(11).behaviours(
-                new FirstApplicableBehaviour<>(
-                        new AllApplicableBehaviours<>(
-                                new FetchSeeds<>(),
-                                new FirstApplicableBehaviour<>(new PickUpItems<>()),
-                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>(), new DoProduction<>(), new DoSupportProduction<>(), new ReturnItems<>())
-                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
-                        new FirstApplicableBehaviour<>(new CookFood<>(), new PickUpItems<>(), new ReturnItems<>()).startCondition(villager -> villager.getJob() == Plot.Job.TRADER),
-                        new AllApplicableBehaviours<>(
-                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
-                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
-                )
+//                new FirstApplicableBehaviour<>(
+//                        new AllApplicableBehaviours<>(
+//                                new FetchSeeds<>(),
+//                                new FirstApplicableBehaviour<>(new PickUpItems<>()),
+//                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>(), new DoProduction<>(), new DoSupportProduction<>(), new ReturnItems<>())
+//                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+//                        new FirstApplicableBehaviour<>(new CookFood<>(), new PickUpItems<>(), new ReturnItems<>()).startCondition(villager -> villager.getJob() == Plot.Job.TRADER),
+//                        new AllApplicableBehaviours<>(
+//                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
+//                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
+//                )
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getRestTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.REST).priority(1).behaviours(
-                new SleepInTent<>(),
-                new GoHome<>(),
-                new ReturnItems<>().startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
-                new FirstApplicableBehaviour<>(new ReturnItems<>(), new AdjustValuationsAndPrices<>()).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER)
+//                new SleepInTent<>(),
+//                new GoHome<>(),
+//                new ReturnItems<>().startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+//                new FirstApplicableBehaviour<>(new ReturnItems<>(), new AdjustValuationsAndPrices<>()).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER)
         );
     }
 

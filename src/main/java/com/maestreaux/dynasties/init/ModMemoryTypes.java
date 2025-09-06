@@ -20,17 +20,6 @@ import java.util.Optional;
 public class ModMemoryTypes {
     public static final DeferredRegister<MemoryModuleType<?>> MEMORY_TYPES = DeferredRegister.create(ForgeRegistries.Keys.MEMORY_MODULE_TYPES, DynastiesMod.MODID);
     public static final RegistryObject<MemoryModuleType<Plot>> HOME_PLOT = MEMORY_TYPES.register("home_plot", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<Plot>>> AVAILABLE_PLOTS = MEMORY_TYPES.register("available_plots", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<BlockPos>> AVAILABLE_TENT = MEMORY_TYPES.register("available_tent", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<BlockPos>>> HOME_FARMLANDS = MEMORY_TYPES.register("home_farmlands", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<List<BaseContainerBlockEntity>>> HOME_CONTAINERS = MEMORY_TYPES.register("home_containers", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> AVAILABLE_SEEDS = MEMORY_TYPES.register("available_seeds", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<BlockPos>>> FULLY_GROWN_CROPS = MEMORY_TYPES.register("fully_grown_crops", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> AVAILABLE_FOOD = MEMORY_TYPES.register("available_food", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<LivingEntity>>> HOME_LIVESTOCK = MEMORY_TYPES.register("home_livestock", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<ItemLocation>>> INGREDIENTS = MEMORY_TYPES.register("ingredients", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<List<CampfirePotBlockEntity>>> HOME_CAMPFIRE_POTS = MEMORY_TYPES.register("home_campfire_pots", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<CampfirePotBlockEntity>> AVAILABLE_MEAL = MEMORY_TYPES.register("available_meal", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<MealType>> BEST_MEAL = MEMORY_TYPES.register("best_meal", () -> new MemoryModuleType<>(Optional.empty()));
-    public static final RegistryObject<MemoryModuleType<Production<?,?,?>>> BEST_PRODUCTION_TASK = MEMORY_TYPES.register("best_production_task", () -> new MemoryModuleType<>(Optional.empty()));
+
 }

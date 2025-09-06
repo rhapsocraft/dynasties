@@ -2,6 +2,7 @@ package com.maestreaux.dynasties.core.utils;
 
 import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.core.MealType;
+import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
 import com.maestreaux.dynasties.init.ModMealTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -28,7 +29,7 @@ public class MealUtils {
         return mealType.getRecipe().getIngredients().entrySet().stream().anyMatch(entry -> entry.getKey() == ingredient && entry.getValue() <= ingredientCount);
     }
 
-    private static float getCravingScore(AbstractDynastyVillager villager, MealType mealType) {
+    private static float getCravingScore(SimulatedVillagerEntity villager, MealType mealType) {
         var stomach = villager.getStomach();
         var stomachNutrients = stomach.calculateNutrition(villager.level().getGameTime());
         var mealNutrients = mealType.getNutrients();
@@ -60,7 +61,7 @@ public class MealUtils {
             var mealTypesWithIngredient = ModMealTypes.getAllMealTypes().stream().filter(mealType -> hasIngredient(mealType, ingredient)).toList();
 
             if (!mealTypesWithIngredient.isEmpty()) {
-                var sellerAgent = seller.asMarketAgent();
+                var sellerAgent = seller.getSimEntity().asMarketAgent();
 
                 for (var mealType : mealTypesWithIngredient) {
                     var ingredientsSet = new HashSet<>(mealType.getRecipe().getIngredients().keySet());
@@ -82,7 +83,7 @@ public class MealUtils {
                     var neededIngredientsForMeal = Math.max(recipeIngredient.getValue() - availableIngredients, 0);
 
                     // TODO: this should be handled in a different method
-                    var buyerAgent = buyer.asMarketAgent();
+                    var buyerAgent = buyer.getSimEntity().asMarketAgent();
                     var itemDesiredSupply = Math.max(buyerAgent.getDesiredSupply(ingredient) - availableIngredients, 0);
 
                     if (neededIngredientsForMeal > 0) {
@@ -106,8 +107,8 @@ public class MealUtils {
 
     public static float getMealDesirability(AbstractDynastyVillager cook, MealType mealType) {
         // TODO: get family's/household's craving?
-        var mealSurfeit = cook.getStomach().getSurfeitFactor(mealType, cook.level().getGameTime());
-        var cravingScore = getCravingScore(cook, mealType);
+        var mealSurfeit = cook.getSimEntity().getStomach().getSurfeitFactor(mealType, cook.level().getGameTime());
+        var cravingScore = getCravingScore(cook.getSimEntity(), mealType);
         var normalizedCalories = mealType.getCalories() / 10.0F;
 
         return mealType.getBaseDesirability() * normalizedCalories * (1 + cravingScore) * mealSurfeit;

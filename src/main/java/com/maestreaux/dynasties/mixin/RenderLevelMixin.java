@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.mixin;
 
 import com.maestreaux.dynasties.client.renderer.ZoneRenderer;
+import com.maestreaux.dynasties.client.renderer.debug.SimulatedEntityDebugRenderer;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -31,6 +32,7 @@ public class RenderLevelMixin {
             locals = LocalCapture.CAPTURE_FAILHARD, method = "lambda$addLateDebugPass$5(Lnet/minecraft/client/renderer/FogParameters;Lcom/mojang/blaze3d/resource/ResourceHandle;Lnet/minecraft/world/phys/Vec3;)V" )
     private void renderLevel(FogParameters fogParams, ResourceHandle resourceHandle, Vec3 vec3, CallbackInfo ci, PoseStack posestack, MultiBufferSource.BufferSource bufferSource) {
         ZoneRenderer.renderZone(posestack, bufferSource);
+        SimulatedEntityDebugRenderer.renderSimulatedEntities(posestack, bufferSource);
     }
 }
 

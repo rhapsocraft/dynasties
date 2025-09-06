@@ -2,11 +2,14 @@ package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.commands.ResetValuationsCommand;
+import com.maestreaux.dynasties.core.simulation.SimulationState;
+import com.maestreaux.dynasties.core.simulation.Simulator;
 import com.maestreaux.dynasties.core.utils.PlotUtils;
 import com.maestreaux.dynasties.init.ModBuildings;
 import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CAddPlot;
+import com.maestreaux.dynasties.network.message.CSimulatedEntitiesList;
 import com.maestreaux.dynasties.network.message.CZonesList;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
@@ -15,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -29,12 +33,18 @@ public class GeneralModEvents {
         PacketHandler.sendToPlayer(packet, player);
     }
 
+    private static void sendSimulatedEntitiesPacket(ServerLevel level, ServerPlayer player) {
+        var packet = new CSimulatedEntitiesList(SimulationState.getEntities(level));
+        PacketHandler.sendToPlayer(packet, player);
+    }
+
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         var level = event.getEntity().level();
 
         if (!level.isClientSide()) {
             sendZonesListPacket((ServerLevel) level, (ServerPlayer) event.getEntity());
+            sendSimulatedEntitiesPacket((ServerLevel) level, (ServerPlayer) event.getEntity());
         }
     }
 
@@ -55,6 +65,21 @@ public class GeneralModEvents {
     }
 
     @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            // Implement for only Overworld for now
+            var level = event.getServer().getLevel(ServerLevel.OVERWORLD);
+
+            var currentTick = event.getServer().getTickCount();
+            if (currentTick % 10 == 0) {
+
+
+                Simulator.doTick(level, currentTick);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         var house = ModBuildings.BUILDINGS;
 
@@ -70,24 +95,24 @@ public class GeneralModEvents {
             var hitPos = event.getHitVec().getBlockPos();
 
             if (event.getItemStack().is(ModItems.DEBUG_TOOL.get())) {
-                var level = event.getLevel();
-                var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ? hitPos.above() : hitPos;
+                if (!event.getEntity().isShiftKeyDown()) {
+                    var level = event.getLevel();
+                    var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ? hitPos.above() : hitPos;
 
-                var newZone = new Zone(serverLevel, position);
+                    var newZone = new Zone(serverLevel, position);
 
-                Zone.add(serverLevel, newZone);
+                    Zone.add(serverLevel, newZone);
 
-                for (int i = 0; i < 8; i++) {
-                    var newVillager = new DynastiesVillager(serverLevel, newZone);
+                    for (int i = 0; i < 8; i++) {
+                        var newVillager = new DynastiesVillager(serverLevel, newZone);
+                        serverLevel.addFreshEntity(newVillager);
+                        newVillager.moveTo(newZone.getCenter().above().getCenter());
+                    }
+                } else {
+                    var newVillager = new DynastiesVillager(serverLevel);
                     serverLevel.addFreshEntity(newVillager);
-                    newVillager.moveTo(newZone.getCenter().above().getCenter());
+                    newVillager.moveTo(event.getHitVec().getLocation());
                 }
-
-                var nobilityVillager = new DynastiesVillager(serverLevel, newZone);
-                nobilityVillager.setIsNobility(true);
-                serverLevel.addFreshEntity(nobilityVillager);
-                nobilityVillager.moveTo(newZone.getCenter().above().getCenter());
-
             } else if (event.getItemStack().is(ModItems.DEBUG_TOOL_PLOT_CONVERTER.get())) {
                 var parentZone = Zone.getContainerZone(serverLevel, hitPos);
                 var selectedPlot = parentZone.getPlots().stream().filter(plot -> PlotUtils.contains(plot.getAbsoluteStartPos(), plot.getAbsoluteEndPos(), hitPos)).findFirst().orElse(null);

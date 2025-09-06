@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.world;
 
+import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CAddZone;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -30,7 +31,7 @@ public class Zone {
     private BlockPos center;
     private AABB boundingBox;
     private List<Plot> plots = new ArrayList<>();
-    private final Set<AbstractDynastyVillager> residents = new HashSet<>();
+    private final Set<SimulatedVillagerEntity> residents = new HashSet<>();
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final Level level;
@@ -128,11 +129,11 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
-    public void addResident(AbstractDynastyVillager villager) {
+    public void addResident(SimulatedVillagerEntity villager) {
         this.residents.add(villager);
     }
 
-    public Set<AbstractDynastyVillager> getResidents() {
+    public Set<SimulatedVillagerEntity> getResidents() {
         return this.residents;
     }
 
@@ -301,7 +302,7 @@ public class Zone {
         }
 
         public static ZoneSavedData getInstance(ServerLevel serverLevel) {
-            return serverLevel.getDataStorage().computeIfAbsent(new Factory<ZoneSavedData>(ZoneSavedData::create, (compoundTag, provider) -> ZoneSavedData.load(serverLevel, compoundTag), DataFixTypes.LEVEL), "zone");
+            return serverLevel.getDataStorage().computeIfAbsent(new Factory<>(ZoneSavedData::create, (compoundTag, provider) -> ZoneSavedData.load(serverLevel, compoundTag), DataFixTypes.LEVEL), "zone");
         }
 
     }

@@ -19,7 +19,7 @@ public class TradeUtils {
         var tradeOffersMap = new HashMap<Item, List<Pair<MarketAgent.TradeOffer, AbstractDynastyVillager>>>();
 
         for (var trader : otherTraders) {
-            var agent = trader.asMarketAgent();
+            var agent = trader.getSimEntity().asMarketAgent();
 
             for (var offer : agent.getActiveOffers().values()) {
                 tradeOffersMap.get(offer.getItemOffered().getItem()).add(Pair.of(offer, trader));
@@ -31,13 +31,13 @@ public class TradeUtils {
 
     public static List<Pair<MarketAgent.TradeOffer, Float>> getDesiredOffers(AbstractDynastyVillager trader, List<AbstractDynastyVillager> otherTraders) {
         // TODO: Evaluate based on trade categories
-        var evaluator = trader.asMarketAgent();
+        var evaluator = trader.getSimEntity().asMarketAgent();
         var tradeOffers = new ArrayList<Pair<MarketAgent.TradeOffer, Float>>();
 
         for (var otherTrader : otherTraders) {
             if (otherTrader == trader) continue;
 
-            var traderAgent = otherTrader.asMarketAgent();
+            var traderAgent = otherTrader.getSimEntity().asMarketAgent();
             var activeOffers = traderAgent.getActiveOffers();
 
             // Evaluate Ingredients

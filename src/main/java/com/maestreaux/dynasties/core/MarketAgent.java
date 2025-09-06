@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.core;
 
+import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -29,14 +30,14 @@ public class MarketAgent {
 
     private Map<Item, Float> valuations = new HashMap<>() {{ put(ModItems.COIN.get(), MARKETABLE_ITEMS.get(ModItems.COIN.get())); }};
     private final Map<Item, TradeOffer> activeOffers = new HashMap<>();
-    private final AbstractDynastyVillager entity;
+    private final SimulatedVillagerEntity entity;
 
     // DEBUG
     private int money = 300;
 
     public long valuationsLastUpdated = 0;
 
-    public MarketAgent(AbstractDynastyVillager villager) {
+    public MarketAgent(SimulatedVillagerEntity villager) {
         this.entity = villager;
     }
 
@@ -228,7 +229,7 @@ public class MarketAgent {
             this.itemOffered = itemStack;
         }
 
-        public AbstractDynastyVillager getEntity() {
+        public SimulatedVillagerEntity getEntity() {
             return this.agent.entity;
         }
 

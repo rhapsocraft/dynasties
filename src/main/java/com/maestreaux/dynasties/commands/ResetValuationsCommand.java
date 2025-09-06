@@ -17,7 +17,7 @@ public class ResetValuationsCommand {
         if (player != null) {
             player.serverLevel().getEntities().getAll().forEach(entity -> {
                 if (entity instanceof AbstractDynastyVillager villager) {
-                    var marketAgent = villager.asMarketAgent();
+                    var marketAgent = villager.getSimEntity().asMarketAgent();
                     marketAgent.resetValuations();
                     marketAgent.setMoney(300);
                 }

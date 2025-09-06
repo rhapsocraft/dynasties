@@ -51,7 +51,7 @@ public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, Dy
         renderState.turnLeftAnimationState.copyFrom(villager.turnLeftAnimationState);
         renderState.swingAnimationState.copyFrom(villager.swingAnimationState);
         renderState.mainArm = villager.getMainArm();
-        renderState.debugData = villager.getDebugData();
+        renderState.debugData = null; // villager.getSimEntity().getDebugData();
 
 
         // TODO: TEMPORARY NOBILITY FLAG
@@ -103,22 +103,22 @@ public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, Dy
         poseStack.scale(0.01F, -0.01F, 0.01F);
         Matrix4f matrix4f = poseStack.last().pose();
 
-        var desiredItems = renderState.debugData.desiredItems();
-        var moneyText = "Money: " + renderState.debugData.money();
-        StringBuilder listText = new StringBuilder("Desired: ");
-        var caloriesText = "Calories: ";
-
-        for (var itemName : desiredItems) {
-            listText.append(itemName).append(",");
-        }
-
-        font.drawInBatch(moneyText, (float) (-font.width(moneyText)) / 2.0F, 0.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
-        font.drawInBatch(listText.toString(), (float) (-font.width(listText.toString())) / 2.0F, 11.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
-
-        var valuations = renderState.debugData.valuations();
-        for (int i = 0; i < valuations.size(); i++) {
-            font.drawInBatch(valuations.get(i), 20.0F, 40.0F + (i * 11F), -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
-        }
+//        var desiredItems = renderState.debugData.desiredItems();
+//        var moneyText = "Money: " + renderState.debugData.money();
+//        StringBuilder listText = new StringBuilder("Desired: ");
+//        var caloriesText = "Calories: ";
+//
+//        for (var itemName : desiredItems) {
+//            listText.append(itemName).append(",");
+//        }
+//
+//        font.drawInBatch(moneyText, (float) (-font.width(moneyText)) / 2.0F, 0.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+//        font.drawInBatch(listText.toString(), (float) (-font.width(listText.toString())) / 2.0F, 11.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+//
+//        var valuations = renderState.debugData.valuations();
+//        for (int i = 0; i < valuations.size(); i++) {
+//            font.drawInBatch(valuations.get(i), 20.0F, 40.0F + (i * 11F), -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+//        }
 
         poseStack.popPose();
     }

@@ -1,8 +1,6 @@
 package com.maestreaux.dynasties.network.message;
 
 import com.maestreaux.dynasties.DynastiesMod;
-import com.maestreaux.dynasties.world.Plot;
-import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -35,7 +33,7 @@ public record SBuyFromTrader(UUID traderUUID, ItemStack itemToBuy, int amountToB
 
                     var trader = (AbstractDynastyVillager) level.getEntity(message.traderUUID);
                     if (trader != null) {
-                        var marketAgent = trader.asMarketAgent();
+                        var marketAgent = trader.getSimEntity().asMarketAgent();
                         var offer = marketAgent.getActiveOffers().get(message.itemToBuy.getItem());
 
                         var boughtItems = offer.sell(message.amountToBuy);

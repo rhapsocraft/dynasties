@@ -1,9 +1,6 @@
 package com.maestreaux.dynasties.network;
 
-import com.maestreaux.dynasties.network.message.CAddPlot;
-import com.maestreaux.dynasties.network.message.CAddZone;
-import com.maestreaux.dynasties.network.message.CZonesList;
-import com.maestreaux.dynasties.network.message.SBuyFromTrader;
+import com.maestreaux.dynasties.network.message.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.*;
@@ -38,6 +35,16 @@ public class PacketHandler {
         INSTANCE.messageBuilder(CAddPlot.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .codec(CAddPlot.STREAM_CODEC)
                 .consumerMainThread(CAddPlot::handle)
+                .add();
+
+        INSTANCE.messageBuilder(CUpdateSimulatedEntity.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CUpdateSimulatedEntity.STREAM_CODEC)
+                .consumerMainThread(CUpdateSimulatedEntity::handle)
+                .add();
+
+        INSTANCE.messageBuilder(CSimulatedEntitiesList.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CSimulatedEntitiesList.STREAM_CODEC)
+                .consumerMainThread(CSimulatedEntitiesList::handle)
                 .add();
 
         INSTANCE.messageBuilder(SBuyFromTrader.class, id(), NetworkDirection.PLAY_TO_SERVER)

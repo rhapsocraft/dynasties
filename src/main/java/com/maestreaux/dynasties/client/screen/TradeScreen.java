@@ -35,7 +35,7 @@ public class TradeScreen extends Screen {
     }
 
     private void buyItem(int offerIndex, int quantity) {
-        var offers = this.trader.getTradeOffers();
+        var offers = this.trader.getSimEntity().getTradeOffers();
 
         if(offerIndex < offers.size()) {
             var offer = offers.get(offerIndex);
@@ -85,7 +85,7 @@ public class TradeScreen extends Screen {
 
         pGuiGraphics.drawString(this.font, TITLE, this.leftPos + 8, this.topPos + 8, 0x404040, false);
 
-        var offers = this.trader.getTradeOffers();
+        var offers = this.trader.getSimEntity().getTradeOffers();
 
 
         int offersCount = offers.size();

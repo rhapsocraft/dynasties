@@ -49,9 +49,9 @@ public class AIUtils {
         var homePlot = BrainUtil.getMemory(villager, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
-            return homePlot.getOccupiedSlots().stream().flatMapToInt(slot -> IntStream.of(slot.getOccupier().getMaxHunger())).sum();
+            return homePlot.getOccupiedSlots().stream().flatMapToInt(slot -> IntStream.of(slot.getOccupier().getSimEntity().getMaxHunger())).sum();
         } else {
-            return villager.getMaxHunger();
+            return villager.getSimEntity().getMaxHunger();
         }
     }
 

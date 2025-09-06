@@ -27,7 +27,7 @@ public class ItemProduct implements Production.IProduct<Item> {
     }
 
     public float getGains(AbstractDynastyVillager villager) {
-        var marketAgent = villager.asMarketAgent();
+        var marketAgent = villager.getSimEntity().asMarketAgent();
 
         var valuation = marketAgent.getValuations().get(this.item);
 
