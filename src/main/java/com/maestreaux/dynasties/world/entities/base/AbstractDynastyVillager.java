@@ -321,7 +321,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         this.entityData.set(IS_NOBILITY, compoundTag.getBoolean("villagerdynasties:is_nobility"));
 
         if (compoundTag.contains("villagerdynasties:inventory", 9)) {
-            this.getInventory().fromTag(compoundTag.getList("Inventory", 10), this.registryAccess());
+            this.getInventory().fromTag(compoundTag.getList("villagerdynasties:inventory", 10), this.registryAccess());
         }
         if (compoundTag.contains("villagerdynasties:trade_inventory", 9)) {
             this.getTradeInventory().fromTag(compoundTag.getList("villagerdynasties:trade_inventory", 10), this.registryAccess());

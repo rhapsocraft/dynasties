@@ -6,16 +6,13 @@ import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
-import com.maestreaux.dynasties.world.items.Meal;
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
@@ -26,12 +23,10 @@ import net.minecraft.world.phys.Vec3;
 import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.maestreaux.dynasties.core.utils.InventoryUtils.getPotentialNutrition;
-import static com.maestreaux.dynasties.init.ModMealTypes.ALL_RECIPE_INGREDIENTS;
 
 
 public class AIUtils {

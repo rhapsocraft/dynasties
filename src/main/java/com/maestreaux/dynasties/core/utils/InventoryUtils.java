@@ -5,6 +5,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -36,6 +37,40 @@ public class InventoryUtils {
         }
 
         return 0;
+    }
+
+    public static Map<Item, Integer> getItemCounts(SimpleContainer inventory, Set<Item> itemSet) {
+        var itemCountsMap = new HashMap<Item, Integer>();
+
+        inventory.getItems().stream()
+                .filter(itemStack -> itemSet.contains(itemStack.getItem()))
+                .forEach(itemStack -> {
+                    var item = itemStack.getItem();
+
+                    if (itemSet.contains(item)) {
+                        itemCountsMap.computeIfAbsent(item, (itemToCompute) -> itemStack.getCount());
+                    }
+                });
+
+        return itemCountsMap;
+    }
+
+    public static Map<Item, Integer> getItemCounts(List<? extends BaseContainerBlockEntity> containers, Set<Item> itemSet) {
+        var itemCountsMap = new HashMap<Item, Integer>();
+
+        for (var container: containers) {
+            for(int i = 0; i < container.getContainerSize(); ++i) {
+                ItemStack itemStack = container.getItem(i);
+                var item = itemStack.getItem();
+
+                if (itemSet.contains(item)) {
+                    itemCountsMap.computeIfAbsent(item, (itemToCompute) -> itemStack.getCount());
+                }
+
+            }
+        }
+
+        return itemCountsMap;
     }
 
     public static int getPotentialNutrition(ServerLevel level, ItemStack item) {

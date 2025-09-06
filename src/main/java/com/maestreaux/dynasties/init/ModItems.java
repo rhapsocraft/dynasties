@@ -47,6 +47,9 @@ public class ModItems {
     public static final RegistryObject<Item> CAMPFIRE_POT = register("campfire_pot", (name) -> new BlockItem(ModBlocks.CAMPFIRE_POT.get(),
             new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))));
 
+    public static final RegistryObject<Item> SPINNING_WHEEL = register("spinning_wheel", (name) -> new BlockItem(ModBlocks.SPINNING_WHEEL.get(),
+            new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))));
+
     public static final RegistryObject<Item> COIN = register("coin", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))));
     public static final RegistryObject<Item> PACKED_GOODS = register("packed_goods", (name) -> new PackedGoods(new Item.Properties()
             .setId((ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))))
@@ -61,12 +64,9 @@ public class ModItems {
     public static final RegistryObject<Item> WOOL_TUNIC = register("wool_tunic", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(1)));
     public static final RegistryObject<Item> WOOL_PANTS = register("wool_pants", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(1)));
 
+    public static final RegistryObject<Item> FLAX_TWINE = register("flax_twine", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
     public static final RegistryObject<Item> LINEN_CLOTH = register("linen_cloth", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
     public static final RegistryObject<Item> SILK_CLOTH = register("silk_cloth", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
-
-//    public static final RegistryObject<Item> BEEF_POTATO_STEW_MEAL = register("beef_potato_stew", (name) -> new Meal(
-//            new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))
-//    , ModMealTypes.getMealType(BEEF_POTATO_STEW)));
 
     public static final List<RegistryObject<Item>> MEAL_ITEMS = new ArrayList<>();
 
@@ -87,6 +87,7 @@ public class ModItems {
                 output.accept(PACKED_GOODS.get());
                 output.accept(CAMPFIRE_POT.get());
                 output.accept(SPOON.get());
+                output.accept(SPINNING_WHEEL.get());
             }).build());
 
     public static final RegistryObject<CreativeModeTab> MEALS_TAB = CREATIVE_MODE_TABS.register("villager_dynasties_meals", () -> CreativeModeTab.builder()
@@ -106,6 +107,7 @@ public class ModItems {
                 output.accept(WOOL_CLOTH.get());
                 output.accept(WOOL_TUNIC.get());
                 output.accept(WOOL_PANTS.get());
+                output.accept(FLAX_TWINE.get());
                 output.accept(LINEN_CLOTH.get());
                 output.accept(SILK_CLOTH.get());
             }).build());

@@ -3,6 +3,7 @@ package com.maestreaux.dynasties.init;
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.core.MealType;
+import com.maestreaux.dynasties.core.production.Production;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.blockentity.CampfirePotBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -31,4 +32,5 @@ public class ModMemoryTypes {
     public static final RegistryObject<MemoryModuleType<List<CampfirePotBlockEntity>>> HOME_CAMPFIRE_POTS = MEMORY_TYPES.register("home_campfire_pots", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<CampfirePotBlockEntity>> AVAILABLE_MEAL = MEMORY_TYPES.register("available_meal", () -> new MemoryModuleType<>(Optional.empty()));
     public static final RegistryObject<MemoryModuleType<MealType>> BEST_MEAL = MEMORY_TYPES.register("best_meal", () -> new MemoryModuleType<>(Optional.empty()));
+    public static final RegistryObject<MemoryModuleType<Production<?,?,?>>> BEST_PRODUCTION_TASK = MEMORY_TYPES.register("best_production_task", () -> new MemoryModuleType<>(Optional.empty()));
 }

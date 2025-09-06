@@ -161,7 +161,6 @@ public class Plot {
         return this.slots.stream().filter(slot -> slot.occupiedBy == villager).findFirst().orElse(null);
     }
 
-
     // TODO: Temporary
     public Partition getPartitionToBuildOn() {
         return this.partitions.stream().filter(part -> !part.isConstructionFinished()).findFirst().orElse(null);

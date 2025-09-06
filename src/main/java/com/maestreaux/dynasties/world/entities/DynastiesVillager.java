@@ -200,7 +200,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new LivestockSensor<>(),
                 new HomeCookingPotSensor<>(),
                 new IngredientsSensor<>(),
-                new BestMealSensor<>()
+                new BestMealSensor<>(),
+                new ProductionSensor<>()
         );
     }
 
@@ -250,10 +251,10 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new FirstApplicableBehaviour<>(
                         new AllApplicableBehaviours<>(
                                 new FetchSeeds<>(),
-                                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
-                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
+                                new FirstApplicableBehaviour<>(new PickUpItems<>()),
+                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>(), new DoProduction<>(), new DoSupportProduction<>(), new ReturnItems<>())
                         ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
-                        new FirstApplicableBehaviour<>(new CookFood<>(), new PickUpItems<>(), new ReturnItems<>(), new FetchIngredients<>()).startCondition(villager -> villager.getJob() == Plot.Job.TRADER),
+                        new FirstApplicableBehaviour<>(new CookFood<>(), new PickUpItems<>(), new ReturnItems<>()).startCondition(villager -> villager.getJob() == Plot.Job.TRADER),
                         new AllApplicableBehaviours<>(
                                 new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
                         ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)

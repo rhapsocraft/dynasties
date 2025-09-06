@@ -29,7 +29,7 @@ public class ModMealTypes {
     public static RegistryObject<MealType> BOILED_CARROTS = registerMealType("boiled_carrots", (name) -> new MealType(new MealType.MealNutrients(0, 3,  0, 0 ),
             new MealType.MealRecipe(Map.of(Items.CARROT, 3)), 15, 2,5 ));
     public static RegistryObject<MealType> ROOT_VEGETABLE_STEW = registerMealType("root_vegetable_stew", (name) -> new MealType(new MealType.MealNutrients(0, 3,  0, 0 ),
-            new MealType.MealRecipe(Map.of(Items.POTATO, 1, Items.CARROT, 1, Items.BEETROOT, 1)), 15, 4, 5));
+            new MealType.MealRecipe(Map.of(Items.POTATO, 2, Items.CARROT, 2, Items.BEETROOT, 2)), 30, 4, 5));
     public static RegistryObject<MealType> BEEF_POTATO_STEW = registerMealType("beef_potato_stew", (name) -> new MealType(new MealType.MealNutrients(2,3, 0, 0),
             new MealType.MealRecipe(Map.of(Items.BEEF, 1, Items.POTATO, 3)), 30, 6, 5));
     public static RegistryObject<MealType> BEEF_CARROT_STEW = registerMealType("beef_carrot_stew", (name) -> new MealType(new MealType.MealNutrients(2,3, 0, 0),
@@ -41,9 +41,9 @@ public class ModMealTypes {
     public static RegistryObject<MealType> BEETROOT_SOUP = registerMealType("beetroot_soup", (name) -> new MealType(new MealType.MealNutrients(0,3, 0, 0),
             new MealType.MealRecipe(Map.of(Items.BEETROOT, 3)), 15, 2, 5));
     public static RegistryObject<MealType> PORK_POT_ROAST = registerMealType("pork_pot_roast", (name) -> new MealType(new MealType.MealNutrients(2,0, 0, 0),
-            new MealType.MealRecipe(Map.of(Items.PORKCHOP, 2)), 16, 4, 4));
+            new MealType.MealRecipe(Map.of(Items.PORKCHOP, 4)), 32, 4, 4));
     public static RegistryObject<MealType> BEEF_POT_ROAST = registerMealType("beef_pot_roast", (name) -> new MealType(new MealType.MealNutrients(2,0, 0, 0),
-            new MealType.MealRecipe(Map.of(Items.BEEF, 2)), 16, 4, 4));
+            new MealType.MealRecipe(Map.of(Items.BEEF, 4)), 32, 4, 4));
 
     public static void register(IEventBus bus) {
         MEAL_TYPES.register(bus);
