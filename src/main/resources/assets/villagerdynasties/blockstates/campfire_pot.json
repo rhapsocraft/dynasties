@@ -2,6 +2,159 @@
   "variants": {
     "": {
       "model": "villagerdynasties:block/campfire_pot_cooking"
+    },
+    "cooked=true" : {
+      "model": "villagerdynasties:block/campfire_pot"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_potatoes,servings=5": {
+      "model": "villagerdynasties:block/meals/boiled_potatoes/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_potatoes,servings=4": {
+      "model": "villagerdynasties:block/meals/boiled_potatoes/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_potatoes,servings=3": {
+      "model": "villagerdynasties:block/meals/boiled_potatoes/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_potatoes,servings=2": {
+      "model": "villagerdynasties:block/meals/boiled_potatoes/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_potatoes,servings=1": {
+      "model": "villagerdynasties:block/meals/boiled_potatoes/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_carrots,servings=5": {
+      "model": "villagerdynasties:block/meals/boiled_carrots/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_carrots,servings=4": {
+      "model": "villagerdynasties:block/meals/boiled_carrots/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_carrots,servings=3": {
+      "model": "villagerdynasties:block/meals/boiled_carrots/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_carrots,servings=2": {
+      "model": "villagerdynasties:block/meals/boiled_carrots/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_boiled_carrots,servings=1": {
+      "model": "villagerdynasties:block/meals/boiled_carrots/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_carrot_stew,servings=5": {
+      "model": "villagerdynasties:block/meals/beef_carrot_stew/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_carrot_stew,servings=4": {
+      "model": "villagerdynasties:block/meals/beef_carrot_stew/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_carrot_stew,servings=3": {
+      "model": "villagerdynasties:block/meals/beef_carrot_stew/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_carrot_stew,servings=2": {
+      "model": "villagerdynasties:block/meals/beef_carrot_stew/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_carrot_stew,servings=1": {
+      "model": "villagerdynasties:block/meals/beef_carrot_stew/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_potato_stew,servings=5": {
+      "model": "villagerdynasties:block/meals/beef_potato_stew/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_potato_stew,servings=4": {
+      "model": "villagerdynasties:block/meals/beef_potato_stew/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_potato_stew,servings=3": {
+      "model": "villagerdynasties:block/meals/beef_potato_stew/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_potato_stew,servings=2": {
+      "model": "villagerdynasties:block/meals/beef_potato_stew/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_potato_stew,servings=1": {
+      "model": "villagerdynasties:block/meals/beef_potato_stew/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_carrot_stew,servings=5": {
+      "model": "villagerdynasties:block/meals/pork_carrot_stew/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_carrot_stew,servings=4": {
+      "model": "villagerdynasties:block/meals/pork_carrot_stew/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_carrot_stew,servings=3": {
+      "model": "villagerdynasties:block/meals/pork_carrot_stew/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_carrot_stew,servings=2": {
+      "model": "villagerdynasties:block/meals/pork_carrot_stew/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_carrot_stew,servings=1": {
+      "model": "villagerdynasties:block/meals/pork_carrot_stew/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_potato_stew,servings=5": {
+      "model": "villagerdynasties:block/meals/pork_potato_stew/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_potato_stew,servings=4": {
+      "model": "villagerdynasties:block/meals/pork_potato_stew/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_potato_stew,servings=3": {
+      "model": "villagerdynasties:block/meals/pork_potato_stew/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_potato_stew,servings=2": {
+      "model": "villagerdynasties:block/meals/pork_potato_stew/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_potato_stew,servings=1": {
+      "model": "villagerdynasties:block/meals/pork_potato_stew/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_pot_roast,servings=5": {
+      "model": "villagerdynasties:block/meals/pork_pot_roast/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_pot_roast,servings=4": {
+      "model": "villagerdynasties:block/meals/pork_pot_roast/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_pot_roast,servings=3": {
+      "model": "villagerdynasties:block/meals/pork_pot_roast/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_pot_roast,servings=2": {
+      "model": "villagerdynasties:block/meals/pork_pot_roast/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_pork_pot_roast,servings=1": {
+      "model": "villagerdynasties:block/meals/pork_pot_roast/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_pot_roast,servings=5": {
+      "model": "villagerdynasties:block/meals/beef_pot_roast/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_pot_roast,servings=4": {
+      "model": "villagerdynasties:block/meals/beef_pot_roast/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_pot_roast,servings=3": {
+      "model": "villagerdynasties:block/meals/beef_pot_roast/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_pot_roast,servings=2": {
+      "model": "villagerdynasties:block/meals/beef_pot_roast/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_beef_pot_roast,servings=1": {
+      "model": "villagerdynasties:block/meals/beef_pot_roast/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_root_vegetable_stew,servings=5": {
+      "model": "villagerdynasties:block/meals/root_vegetable_stew/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_root_vegetable_stew,servings=4": {
+      "model": "villagerdynasties:block/meals/root_vegetable_stew/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_root_vegetable_stew,servings=3": {
+      "model": "villagerdynasties:block/meals/root_vegetable_stew/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_root_vegetable_stew,servings=2": {
+      "model": "villagerdynasties:block/meals/root_vegetable_stew/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_root_vegetable_stew,servings=1": {
+      "model": "villagerdynasties:block/meals/root_vegetable_stew/1"
+    },
+    "cooked=true,meal_type=villagerdynasties_beetroot_soup,servings=5": {
+      "model": "villagerdynasties:block/meals/beetroot_soup/5"
+    },
+    "cooked=true,meal_type=villagerdynasties_beetroot_soup,servings=4": {
+      "model": "villagerdynasties:block/meals/beetroot_soup/4"
+    },
+    "cooked=true,meal_type=villagerdynasties_beetroot_soup,servings=3": {
+      "model": "villagerdynasties:block/meals/beetroot_soup/3"
+    },
+    "cooked=true,meal_type=villagerdynasties_beetroot_soup,servings=2": {
+      "model": "villagerdynasties:block/meals/beetroot_soup/2"
+    },
+    "cooked=true,meal_type=villagerdynasties_beetroot_soup,servings=1": {
+      "model": "villagerdynasties:block/meals/beetroot_soup/1"
     }
   }
 }

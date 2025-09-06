@@ -18,5 +18,7 @@ public class ModSensorTypes {
     public static final RegistryObject<SensorType<AvailableFoodSensor<?>>> AVAILABLE_FOOD = SENSOR_TYPES.register("available_food", () -> new SensorType<>(AvailableFoodSensor::new));
     public static final RegistryObject<SensorType<LivestockSensor<?>>> HOME_LIVESTOCK = SENSOR_TYPES.register("home_livestock", () -> new SensorType<>(LivestockSensor::new));
     public static final RegistryObject<SensorType<IngredientsSensor<?>>> INGREDIENTS = SENSOR_TYPES.register("ingredients", () -> new SensorType<>(IngredientsSensor::new));
-    public static final RegistryObject<SensorType<HomeCampfiresSensor<?>>> HOME_CAMPFIRES = SENSOR_TYPES.register("home_campfires", () -> new SensorType<>(HomeCampfiresSensor::new));
+    public static final RegistryObject<SensorType<HomeCookingPotSensor<?>>> HOME_CAMPFIRE_POT = SENSOR_TYPES.register("home_campfires", () -> new SensorType<>(HomeCookingPotSensor::new));
+    public static final RegistryObject<SensorType<AvailableMealSensor<?>>> AVAILABLE_MEAL = SENSOR_TYPES.register("available_meal", () -> new SensorType<>(AvailableMealSensor::new));
+    public static final RegistryObject<SensorType<BestMealSensor<?>>> BEST_MEAL = SENSOR_TYPES.register("best_meal", () -> new SensorType<>(BestMealSensor::new));
 }

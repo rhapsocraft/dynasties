@@ -1,0 +1,7 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "villagerdynasties:item/boiled_carrots",
+		"property": "minecraft:display_context"
+	}
+}

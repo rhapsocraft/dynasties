@@ -1,0 +1,7 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "villagerdynasties:item/pork_pot_roast",
+		"property": "minecraft:display_context"
+	}
+}

@@ -4,7 +4,6 @@ import com.maestreaux.dynasties.core.MealType;
 import net.minecraft.world.item.Item;
 
 public class Meal extends Item {
-
     private MealType mealType;
 
     public Meal(Properties properties) {
@@ -15,6 +14,10 @@ public class Meal extends Item {
     public Meal(Properties properties, MealType mealType) {
         this(properties);
         this.mealType = mealType;
+
+        if (this.mealType != null) {
+            this.mealType.setItem(this);
+        }
     }
 
     public MealType getMealType() {

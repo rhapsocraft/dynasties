@@ -2,17 +2,14 @@ package com.maestreaux.dynasties.core;
 
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModItems;
-import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
-import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,21 +18,22 @@ import java.util.Map;
 public class MarketAgent {
     public static Map<Item, Float> MARKETABLE_ITEMS = Map.of(
             ModItems.COIN.get(), 1F,
-            Items.POTATO, 1F,
-            Items.CARROT, 1F,
-            Items.WHEAT, 1F,
-            Items.BREAD, 1.5F,
-            Items.BEETROOT, 0.5F,
-            Items.BAKED_POTATO, 1.5F
+            Items.POTATO, 5F,
+            Items.CARROT, 5F,
+            Items.WHEAT, 5F,
+            Items.BREAD, 7.5F,
+            Items.BEETROOT, 5F,
+            Items.BAKED_POTATO, 7.5F,
+            Items.PORKCHOP, 7.5F
     );
 
-    public static int BASE_PRICE = 10;
-
-    private final Map<Item, Float> valuations = new HashMap<>();
+    private Map<Item, Float> valuations = new HashMap<>() {{ put(ModItems.COIN.get(), MARKETABLE_ITEMS.get(ModItems.COIN.get())); }};
     private final Map<Item, TradeOffer> activeOffers = new HashMap<>();
     private final AbstractDynastyVillager entity;
-    private int money = 250;
-    private float foodBudget = 0.75F;
+
+    // DEBUG
+    private int money = 300;
+
     public long valuationsLastUpdated = 0;
 
     public MarketAgent(AbstractDynastyVillager villager) {
@@ -50,26 +48,28 @@ public class MarketAgent {
         return this.money;
     }
 
+    public int getItemPrice(Item item) {
+        var currency = this.getCurrency();
+        return Math.round(this.valuations.computeIfAbsent(item, this::extrapolateValuation) * this.valuations.get(currency) * Dictionaries.BASE_PRICE);
+    }
+
+    public Item getCurrency() {
+        // TODO: May Change
+        return ModItems.COIN.get();
+    }
+
     public Map<Item, Float> getValuations() {
         return this.valuations;
+    }
+    public void setValuations(Map<Item, Float> newValuations) {
+        this.valuations = newValuations;
     }
 
     // LET ME COOK
     public float getAverageValuations() {
-        var values = valuations.entrySet();
+        var values = valuations.values();
 
-        return !values.isEmpty() ? values.stream().map(
-                entry -> {
-                    var weight = MARKETABLE_ITEMS.get(entry.getKey());
-                    var valuation = entry.getValue();
-
-                    if (weight == null) {
-                        weight = 1F;
-                    }
-
-                    return valuation * weight;
-                }
-        ).reduce(Float::sum).orElse(0F) / values.size() : 1F;
+        return !values.isEmpty() ? values.stream().reduce(Float::sum).orElse(0F) / values.size() : 1F;
     }
 
     public int getDesiredSupply(Item item) {
@@ -79,7 +79,11 @@ public class MarketAgent {
             itemValuation = 1.0F;
         }
 
-        return Math.round(32 * itemValuation);
+        return Math.round((float) (Dictionaries.BASE_DESIRED_SUPPLY * Math.log(itemValuation)));
+    }
+
+    public void resetValuations() {
+        this.valuations = new HashMap<>() {{ put(ModItems.COIN.get(), MARKETABLE_ITEMS.get(ModItems.COIN.get())); }};
     }
 
     public int calculateSurplus(List<? extends BaseContainerBlockEntity> containers, Item item) {
@@ -118,7 +122,7 @@ public class MarketAgent {
         this.adjustValuation(item);
 
         var itemValuation = valuations.get(item);
-        var price = (int) Math.ceil(itemValuation * BASE_PRICE);
+        var price = (int) Math.ceil(itemValuation * Dictionaries.BASE_PRICE);
 
         var activeOffer = this.activeOffers.get(item);
 
@@ -134,12 +138,24 @@ public class MarketAgent {
         return this.activeOffers;
     }
 
+    public ItemStack buyOffer(TradeOffer offer, int quantityBought) {
+        var itemBought = offer.sell(quantityBought);
+
+        if (itemBought != null) {
+            this.updateValuationsOfExchange(itemBought.getItem(), this.getCurrency(), quantityBought, offer.priceEach);
+
+            return itemBought;
+        }
+
+        return null;
+    }
+
     public void adjustValuation(Item item) {
         var activeItemOffer = this.activeOffers.get(item);
 
         if (activeItemOffer != null) {
             var percentSold = activeItemOffer.getQuantitySold() / activeItemOffer.getQuantityOffered();
-            float currentValuation = this.valuations.computeIfAbsent(item, (itemToValue) -> MARKETABLE_ITEMS.get(itemToValue) * this.getAverageValuations());
+            float currentValuation = this.valuations.computeIfAbsent(item, this::extrapolateValuation);
 
             if (percentSold < 0.33) {
                 this.valuations.put(item, currentValuation * 0.9F);
@@ -147,6 +163,22 @@ public class MarketAgent {
                 this.valuations.put(item, currentValuation * 1.1F);
             }
         }
+    }
+
+    public float extrapolateValuation(Item item) {
+        return (MARKETABLE_ITEMS.get(item) + this.getAverageValuations()) / 2;
+    }
+
+    public void updateValuationsOfExchange(Item itemReceived, Item itemGiven, int quantityReceived, int quantityGiven) {
+        this.valuations.compute(itemGiven, (itemToValue, currentValuation) -> {
+            var valuation = currentValuation == null ? extrapolateValuation(itemToValue) : currentValuation;
+            return valuation + (0.01F * quantityGiven);
+        });
+
+        this.valuations.compute(itemReceived, (itemToValue, currentValuation) -> {
+            var valuation = currentValuation == null ? extrapolateValuation(itemToValue) : currentValuation;
+            return valuation - (0.01F * quantityReceived);
+        });
     }
 
     // Speculate potential profits from producing and selling an item
@@ -172,12 +204,12 @@ public class MarketAgent {
             this(itemOffered, quantity, 0, price);
             this.agent = agent;
 
-            this.agent.valuations.computeIfAbsent(itemOffered.getItem(), (itemToValue) -> MARKETABLE_ITEMS.get(itemToValue) * this.agent.getAverageValuations());
+            this.agent.valuations.computeIfAbsent(itemOffered.getItem(), (itemToValue) -> this.agent.extrapolateValuation(itemToValue));
 
         }
 
         public TradeOffer(MarketAgent agent, ItemStack itemOffered) {
-            this(agent, itemOffered, itemOffered.getCount(), BASE_PRICE);
+            this(agent, itemOffered, itemOffered.getCount(), agent.getItemPrice(itemOffered.getItem()));
         }
 
         public ItemStack getItemOffered() {
@@ -219,41 +251,33 @@ public class MarketAgent {
         }
 
         public ItemStack sell(int quantity) {
-            int actualQuantity = Math.min(this.getStock(), quantity);
+            int quantitySold = Math.min(this.getStock(), quantity);
 
-            if (actualQuantity > 0) {
-                this.quantitySold += actualQuantity;
+            if (quantitySold > 0) {
+                this.quantitySold += quantitySold;
 
-                var sale = this.getPrice() * actualQuantity;
+                var sale = this.getPrice() * quantitySold;
                 var newBalance = this.agent.getMoney() + sale;
                 this.agent.setMoney(newBalance);
 
                 var entity = this.getEntity();
-                var item = this.itemOffered.getItem();
+                var itemSold = this.itemOffered.getItem();
 
                 // remove items from slot
                 var itemStackToSell = this.itemOffered.copy();
-                itemStackToSell.setCount(actualQuantity);
+                itemStackToSell.setCount(quantitySold);
 
-                this.itemOffered.shrink(actualQuantity);
+                this.itemOffered.shrink(quantitySold);
 
-                this.agent.valuations.compute(item, (itemToValue, currentValuation) -> {
-                    var valuation = currentValuation == null ? MARKETABLE_ITEMS.get(itemToValue) * this.agent.getAverageValuations() : currentValuation;
-                    return valuation * (1.0F + (0.005F * actualQuantity));
-                });
+                this.agent.updateValuationsOfExchange(this.agent.getCurrency(), itemSold, this.priceEach, quantitySold);
 
                 entity.updateTradeOffers();
-
-                // TODO: TEMPORARY
-                this.setPrice(Math.round(this.agent.valuations.get(item) * BASE_PRICE));
 
                 return itemStackToSell;
             }
 
             return null;
         }
-
-
 
         static {
             STREAM_CODEC = StreamCodec.composite(

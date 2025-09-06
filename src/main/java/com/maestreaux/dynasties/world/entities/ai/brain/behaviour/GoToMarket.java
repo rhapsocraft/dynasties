@@ -23,24 +23,39 @@ public class GoToMarket<E extends AbstractDynastyVillager> extends ExtendedBehav
     private Plot marketPlot;
     private BlockPos targetPos;
 
-    // TODO: REMOVE
-    private boolean hasUpdatedDebugData = false;
+    private void doTrade(AbstractDynastyVillager entity, List<AbstractDynastyVillager> otherTraders) {
+        var agent = entity.asMarketAgent();
+        var money = agent.getMoney();
+
+        var topOfferPair = TradeUtils.getDesiredOffers(entity, otherTraders).stream().filter(offer -> offer.getFirst().getPrice() <= money && offer.getSecond() > 0.0F).findFirst().orElse(null);
+
+        if (topOfferPair != null && topOfferPair.getSecond() > 0.0F) {
+            var topOffer = topOfferPair.getFirst();
+
+            var itemSold = agent.buyOffer(topOffer, 1);
+
+            if (itemSold != null) {
+                agent.setMoney(money - topOffer.getPrice());
+                entity.getInventory().addItem(itemSold);
+            }
+        }
+    }
 
     protected void start(E entity) {
         if (this.targetPos != null) {
             if (AIUtils.isCloseEnoughToTarget(entity, this.targetPos, 2)) {
                 BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                var otherTraders = entity.getHomeZone().getPlots().stream().flatMap(plot -> plot.getOccupiedSlots().stream().map(Plot.Slot::getOccupier)).toList();
 
-                if (!hasUpdatedDebugData) {
-                    var otherTraders = entity.getHomeZone().getPlots().stream().flatMap(plot -> plot.getOccupiedSlots().stream().map(Plot.Slot::getOccupier)).toList();
+                var canTrade = TradeUtils.getDesiredOffers(entity, otherTraders).stream().anyMatch(offer -> offer.getSecond() > 0.0F);
+
+                if (canTrade) {
+                    doTrade(entity, otherTraders);
 
                     entity.updateDebugData(TradeUtils.getDesiredOffers(entity, otherTraders).stream()
-                            .map(offer -> offer.getFirst().getItemOffered().getItem().getName().getString()).toList());
-
-                    this.hasUpdatedDebugData = true;
+                            .map(offer -> offer.getFirst().getItemOffered().getItem().getName().getString() + ":" + offer.getSecond()).toList());
                 }
             } else {
-                this.hasUpdatedDebugData = false;
                 BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetPos, 0.6F, 1));
             }
         } else {

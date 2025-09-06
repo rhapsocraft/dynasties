@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.core.MealType;
 import com.maestreaux.dynasties.init.ModEntityDataSerializers;
 import com.maestreaux.dynasties.init.ModEntityTypes;
+import com.maestreaux.dynasties.init.ModMealTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
@@ -15,7 +16,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
     private static final EntityDataAccessor<Boolean> IS_FLEEING = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_EATING = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<DynastyVillagerDebugData> DEBUG_DATA = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializer.forValueType(DynastyVillagerDebugData.STREAM_CODEC));
+    private static final EntityDataAccessor<DynastyVillagerDebugData> DEBUG_DATA = SynchedEntityData.defineId(AbstractDynastyVillager.class, ModEntityDataSerializers.VILLAGER_DEBUG_DATA.get());
 
     protected static final EntityDataAccessor<List<MarketAgent.TradeOffer>> TRADE_OFFERS = SynchedEntityData.defineId(AbstractDynastyVillager.class, ModEntityDataSerializers.TRADE_OFFERS.get());
     protected List<Plot> occupiedPlots = new ArrayList<>();
@@ -71,7 +71,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         synchedData.define(IS_FLEEING, false);
         synchedData.define(IS_EATING, false);
         synchedData.define(IS_NOBILITY, false);
-        synchedData.define(DEBUG_DATA, new DynastyVillagerDebugData(new ArrayList<>(), this.asMarketAgent().getMoney()));
+        synchedData.define(DEBUG_DATA, new DynastyVillagerDebugData(new ArrayList<>(), new ArrayList<>(), 0));
     }
 
     public boolean isFleeing() {
@@ -96,7 +96,9 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
 
     public void updateDebugData(List<String> desiredItems) {
         // Run on schedule start?
-        this.entityData.set(DEBUG_DATA, new DynastyVillagerDebugData(desiredItems, this.asMarketAgent().getMoney()));
+        var encodedValuations = this.asMarketAgent().getValuations().entrySet().stream().map(set -> set.getKey() + ":" + set.getValue()).toList();
+
+        this.entityData.set(DEBUG_DATA, new DynastyVillagerDebugData(desiredItems, encodedValuations, this.asMarketAgent().getMoney()));
     }
 
     public boolean isNobility() {
@@ -248,6 +250,37 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         InventoryCarrier.pickUpItem(level, this, this, pItemEntity);
     }
 
+    private void writeMarketAgentData(CompoundTag compoundTag) {
+        var valuationsTag = new ListTag();
+
+        for (var valuationEntrySet : this.agent.getValuations().entrySet()) {
+            var valuationTag = new CompoundTag();
+
+            valuationTag.putInt("villagerdynasties:valuation_item", Item.getId(valuationEntrySet.getKey()));
+            valuationTag.putFloat("villagerdynasties:valuation_value", valuationEntrySet.getValue());
+
+            valuationsTag.add(valuationTag);
+        }
+
+        compoundTag.put("villagerdynasties:valuations", valuationsTag);
+    }
+
+    private void readMarketAgentData(CompoundTag compoundTag) {
+        var valuationsListTag = (ListTag) compoundTag.get("villagerdynasties:valuations");
+
+        if (valuationsListTag != null) {
+            var valuations = new HashMap<Item, Float>();
+
+            for (int i = 0; i < valuationsListTag.size(); i++) {
+                var item = Item.byId(valuationsListTag.getCompound(i).getInt("villagerdynasties:valuation_item"));
+                var value = valuationsListTag.getCompound(i).getFloat("villagerdynasties:valuation_value");
+
+                valuations.put(item, value);
+            }
+
+            this.agent.setValuations(valuations);
+        }
+    }
 
     @Override
     public void readAdditionalSaveData(CompoundTag compoundTag) {
@@ -269,11 +302,32 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
             }
         }
 
+        var stomachContentsTag = (ListTag) compoundTag.get("villagerdynasties:stomach_contents");
+        if (stomachContentsTag != null) {
+            for (int i = 0; i < stomachContentsTag.size(); i++) {
+                var stomachContentItemId = stomachContentsTag.getCompound(i).getInt("villagerdynasties:stomach_item");
+                var stomachContentItem = Item.byId(stomachContentItemId);
+
+                var stomachContentEatenAt = stomachContentsTag.getCompound(i).getLong("villagerdynasties:stomach_eaten_at");
+
+                this.stomach.contents.add(new Pair<>(stomachContentItem, stomachContentEatenAt));
+            }
+        }
+
         this.hunger = compoundTag.getInt("villagerdynasties:hunger");
+        this.agent.setMoney(compoundTag.getInt("villagerdynasties:money"));
 
         // TODO: TEMPORARY NOBILITY FLAG
         this.entityData.set(IS_NOBILITY, compoundTag.getBoolean("villagerdynasties:is_nobility"));
 
+        if (compoundTag.contains("villagerdynasties:inventory", 9)) {
+            this.getInventory().fromTag(compoundTag.getList("Inventory", 10), this.registryAccess());
+        }
+        if (compoundTag.contains("villagerdynasties:trade_inventory", 9)) {
+            this.getTradeInventory().fromTag(compoundTag.getList("villagerdynasties:trade_inventory", 10), this.registryAccess());
+        }
+
+        this.readMarketAgentData(compoundTag);
         this.setCanPickUpLoot(true);
     }
 
@@ -293,8 +347,26 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         }
         compoundTag.put("villagerdynasties:villager_slots", slotsListTag);
 
+        var stomachListTag = new ListTag();
+        for (var stomachContent: this.stomach.contents) {
+            var stomachContentTag = new CompoundTag();
+            var itemId = Item.getId(stomachContent.getFirst());
+
+            stomachContentTag.putInt("villagerdynasties:stomach_item", itemId);
+            stomachContentTag.putLong("villagerdynasties:stomach_eaten_at", stomachContent.getSecond());
+            stomachListTag.add(stomachContentTag);
+        }
+        compoundTag.put("villagerdynasties:stomach_contents", stomachListTag);
+
         compoundTag.putBoolean("villagerdynasties:is_nobility", this.entityData.get(IS_NOBILITY));
         compoundTag.putInt("villagerdynasties:hunger", this.hunger);
+
+        compoundTag.putInt("villagerdynasties:money", this.agent.getMoney());
+
+        compoundTag.put("villagerdynasties:inventory", this.getInventory().createTag(this.registryAccess()));
+        compoundTag.put("villagerdynasties:trade_inventory", this.getTradeInventory().createTag(this.registryAccess()));
+
+        this.writeMarketAgentData(compoundTag);
     }
 
     @Override
@@ -317,7 +389,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     }
 
     public static class Stomach {
-        public final long DIGESTION_DURATION = 24_000;
+        public final long DIGESTION_DURATION = 72_000;
         private List<Pair<Item, Long>> contents;
 
         public Stomach() {
@@ -329,9 +401,16 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
             this.update(gameTime);
         }
 
-        public float getSurfeit(MealType mealType) {
+        public float getSurfeitFactor(MealType mealType, long gameTime) {
+            this.update(gameTime);
             float surfeitDivisor = Math.max(this.contents.size(), 5F);
-            return 1F - (this.contents.stream().filter(content -> ((Meal) content.getFirst()).getMealType().equals(mealType)).count() / surfeitDivisor);
+            return 1F - (this.contents.stream().filter(content -> {
+                if (content.getFirst() instanceof Meal meal) {
+                    return ModMealTypes.getMealType(meal).equals(mealType);
+                } else {
+                    return false;
+                }
+            }).count() / surfeitDivisor);
         }
 
         public StomachNutrients calculateNutrition(long gameTime) {
@@ -342,7 +421,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
             if (!this.contents.isEmpty()) {
                 this.contents.stream().filter((stomachItem) -> stomachItem.getFirst() instanceof Meal).forEach(stomachItem -> {
                     var mealItem = (Meal) stomachItem.getFirst();
-                    var mealNutrients = mealItem.getMealType().getNutrients();
+                    var mealNutrients = ModMealTypes.getMealType(mealItem).getNutrients();
 
                     result.meat += mealNutrients.meat();
                     result.carbohydrates += mealNutrients.carbohydrates();
@@ -367,11 +446,15 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         }
     }
 
-    public record DynastyVillagerDebugData(List<String> desiredItems, float money) {
+    public record DynastyVillagerDebugData(List<String> desiredItems, List<String> valuations, float money) {
         public static final StreamCodec<RegistryFriendlyByteBuf, DynastyVillagerDebugData> STREAM_CODEC;
 
         static {
-            STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DynastyVillagerDebugData::desiredItems, ByteBufCodecs.FLOAT, DynastyVillagerDebugData::money, DynastyVillagerDebugData::new);
+            STREAM_CODEC = StreamCodec.composite(
+                    ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DynastyVillagerDebugData::desiredItems,
+                    ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DynastyVillagerDebugData::valuations,
+                    ByteBufCodecs.FLOAT, DynastyVillagerDebugData::money,
+                    DynastyVillagerDebugData::new);
         }
     }
 

@@ -6,6 +6,7 @@ import com.maestreaux.dynasties.core.utils.AIUtils;
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
+import com.maestreaux.dynasties.world.entities.blockentity.CampfirePotBlockEntity;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.server.level.ServerLevel;
@@ -59,6 +60,7 @@ public class FetchFood<E extends AbstractDynastyVillager> extends ExtendedBehavi
     static {
         MEMORY_REQUIREMENTS = ObjectArrayList.of(new Pair[]{
                 Pair.of(ModMemoryTypes.AVAILABLE_FOOD.get(), MemoryStatus.VALUE_PRESENT),
+                Pair.of(ModMemoryTypes.AVAILABLE_MEAL.get(), MemoryStatus.VALUE_ABSENT),
         });
     }
 }

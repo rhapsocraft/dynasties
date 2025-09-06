@@ -35,7 +35,6 @@ public class DynastiesMod
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
-
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);

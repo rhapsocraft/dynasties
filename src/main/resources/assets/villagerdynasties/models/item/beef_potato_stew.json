@@ -2,8 +2,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [32, 32],
 	"textures": {
-		"0": "villagerdynasties:item/beef_potato_stew",
-		"particle": "villagerdynasties:item/beef_potato_stew"
+		"0": "villagerdynasties:item/beef_potato_stew_bowl",
+		"particle": "villagerdynasties:block/beef_potato_stew"
 	},
 	"elements": [
 		{

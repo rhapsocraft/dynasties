@@ -1,0 +1,6 @@
+{
+	"parent": "villagerdynasties:block/campfire_pot_cooked",
+	"textures": {
+		"2": "villagerdynasties:block/beef_pot_roast"
+	}
+}

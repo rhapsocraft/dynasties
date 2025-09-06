@@ -1,0 +1,7 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "villagerdynasties:item/boiled_potatoes",
+		"property": "minecraft:display_context"
+	}
+}

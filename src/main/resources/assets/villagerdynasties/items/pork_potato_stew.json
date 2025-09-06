@@ -1,0 +1,7 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "villagerdynasties:item/pork_potato_stew",
+		"property": "minecraft:display_context"
+	}
+}

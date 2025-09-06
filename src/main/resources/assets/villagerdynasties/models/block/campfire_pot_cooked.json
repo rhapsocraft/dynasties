@@ -1,7 +1,6 @@
 {
 	"credit": "Made with Blockbench",
 	"textures": {
-		"2": "villagerdynasties:block/beef_potato_stew",
 		"8": "villagerdynasties:block/campfire_pot",
 		"particle": "minecraft:block/cauldron_side"
 	},

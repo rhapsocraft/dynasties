@@ -5,18 +5,15 @@ import com.maestreaux.dynasties.core.MealType;
 import com.maestreaux.dynasties.init.ModMealTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.item.Item;
 import net.tslat.smartbrainlib.util.BrainUtil;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MealUtils {
     private static boolean hasIngredient(MealType mealType, Item ingredient) {
-        return mealType.getRecipe().getIngredients().stream().anyMatch(pair -> pair.getFirst().equals(ingredient));
+        return mealType.getRecipe().getIngredients().keySet().stream().anyMatch(item -> item.equals(ingredient));
     }
 
     private static Map<Item, Integer> getIngredientsCountInPantryMap(List<ItemLocation> pantryItems) {
@@ -28,7 +25,7 @@ public class MealUtils {
     }
 
     private static boolean hasEnoughIngredients(MealType mealType, Item ingredient, int ingredientCount) {
-        return mealType.getRecipe().getIngredients().stream().anyMatch(pair -> pair.getFirst() == ingredient && pair.getSecond() <= ingredientCount);
+        return mealType.getRecipe().getIngredients().entrySet().stream().anyMatch(entry -> entry.getKey() == ingredient && entry.getValue() <= ingredientCount);
     }
 
     private static float getCravingScore(AbstractDynastyVillager villager, MealType mealType) {
@@ -66,31 +63,36 @@ public class MealUtils {
                 var sellerAgent = seller.asMarketAgent();
 
                 for (var mealType : mealTypesWithIngredient) {
-                    var ingredientsSet = mealType.getRecipe().getIngredients().stream().map(Pair::getFirst).collect(Collectors.toSet());
+                    var ingredientsSet = new HashSet<>(mealType.getRecipe().getIngredients().keySet());
                     var pantryItems = InventoryUtils.getItemLocations(homeContainers, ingredientsSet).values().stream().flatMap(Collection::stream).toList();
-                    var mealSurfeit = buyer.getStomach().getSurfeit(mealType);
 
                     var availableIngredientsCount = getIngredientsCountInPantryMap(pantryItems);
                     var ingredientsInInventory = buyer.getInventory().getItems().stream().filter(item -> ingredientsSet.contains(item.getItem())).toList();
                     for (var ingredientInInventory : ingredientsInInventory) {
                         var ingredientItem = ingredientInInventory.getItem();
-                        availableIngredientsCount.put(ingredientItem, availableIngredientsCount.get(ingredientItem) + ingredientInInventory.getCount());
+                        availableIngredientsCount.put(ingredientItem, availableIngredientsCount.computeIfAbsent(ingredientItem, ing -> 0) + ingredientInInventory.getCount());
                     }
 
                     var price = sellerAgent.getActiveOffers().get(ingredient).getPrice();
-                    var recipeIngredient = mealType.getRecipe().getIngredients().stream().filter(pair -> pair.getFirst() == ingredient).findFirst().orElse(null);
-
-                    // TODO: get entire family's craving score?
-                    var cravingScore = getCravingScore(buyer, mealType);
+                    var recipeIngredient = mealType.getRecipe().getIngredients().entrySet().stream().filter(entry -> entry.getKey().equals(ingredient)).findFirst().orElse(null);
 
                     assert recipeIngredient != null;
                     // Meal's desirability is improved if fewer ingredients are needed to be bought
-                    var neededIngredientsForMeal = Math.max(recipeIngredient.getSecond() - availableIngredientsCount.get(ingredient), 0);
+                    var availableIngredients = availableIngredientsCount.computeIfAbsent(ingredient, ing -> 0);
+                    var neededIngredientsForMeal = Math.max(recipeIngredient.getValue() - availableIngredients, 0);
 
-                    float cost = neededIngredientsForMeal * price;
-                    if (cost < 0.1F) cost = 0.1F;
+                    // TODO: this should be handled in a different method
+                    var buyerAgent = buyer.asMarketAgent();
+                    var itemDesiredSupply = Math.max(buyerAgent.getDesiredSupply(ingredient) - availableIngredients, 0);
 
-                    desirabilityRating += (mealType.getBaseDesirability() * mealType.getCalories() * cravingScore * mealSurfeit) / cost;
+                    if (neededIngredientsForMeal > 0) {
+                        float cost = neededIngredientsForMeal * price;
+                        if (cost < 0.1F) cost = 0.1F;
+
+                        desirabilityRating += getMealDesirability(buyer, mealType) / cost;
+                    } else if (itemDesiredSupply > 0) {
+                        desirabilityRating += (float) 1 / price;
+                    }
                 }
 
                 // return desirabilityRating / mealTypesWithIngredient.size();
@@ -100,5 +102,62 @@ public class MealUtils {
 
 
         return desirabilityRating;
+    }
+
+    public static float getMealDesirability(AbstractDynastyVillager cook, MealType mealType) {
+        // TODO: get family's/household's craving?
+        var mealSurfeit = cook.getStomach().getSurfeitFactor(mealType, cook.level().getGameTime());
+        var cravingScore = getCravingScore(cook, mealType);
+        var normalizedCalories = mealType.getCalories() / 10.0F;
+
+        return mealType.getBaseDesirability() * normalizedCalories * (1 + cravingScore) * mealSurfeit;
+    }
+
+    public static boolean canCookMeal(AbstractDynastyVillager cook, MealType mealType, List<ItemLocation> pantryItems) {
+        var availableIngredients = getIngredientsCountInPantryMap(pantryItems);
+        var canCook = true;
+
+        for (var ingredient: mealType.getRecipe().getIngredients().entrySet()) {
+            var availableIngredientCount = availableIngredients.computeIfAbsent(ingredient.getKey(), (item) -> 0);
+
+            if (availableIngredientCount < ingredient.getValue()) {
+                canCook = false;
+                break;
+            }
+        }
+
+        return canCook;
+    }
+
+    public static List<ItemLocation> getAvailableIngredientsForMeal(AbstractDynastyVillager cook, MealType mealType) {
+        var homeContainers = BrainUtil.getMemory(cook, ModMemoryTypes.HOME_CONTAINERS.get());
+
+        if (homeContainers != null) {
+            var ingredients = mealType.getRecipe().getIngredients().keySet();
+            var pantryItems = InventoryUtils.getItemLocations(homeContainers, ingredients).values().stream().flatMap(Collection::stream).toList();
+
+            if (canCookMeal(cook, mealType, pantryItems)) {
+                return pantryItems;
+            }
+        }
+
+        return null;
+    }
+
+    public static MealType getBestAvailableMeal(AbstractDynastyVillager cook) {
+        var mealTypes = ModMealTypes.getAllMealTypes().stream().filter(Objects::nonNull).sorted((m1, m2) -> Float.compare(getMealDesirability(cook, m2), getMealDesirability(cook, m1))).toList();
+        var homeContainers = BrainUtil.getMemory(cook, ModMemoryTypes.HOME_CONTAINERS.get());
+
+        if (homeContainers != null) {
+            var pantryItems = InventoryUtils.getItemLocations(homeContainers, ModMealTypes.ALL_RECIPE_INGREDIENTS).values().stream().flatMap(Collection::stream).toList();
+
+            for (var mealType : mealTypes) {
+                if (canCookMeal(cook, mealType, pantryItems)) {
+                    return mealType;
+                }
+            }
+        }
+
+        return null;
     }
 }

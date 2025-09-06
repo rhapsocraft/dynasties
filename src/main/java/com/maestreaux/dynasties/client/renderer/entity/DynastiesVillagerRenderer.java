@@ -7,16 +7,23 @@ import com.maestreaux.dynasties.client.renderer.layer.VillagerClothesLayer;
 import com.maestreaux.dynasties.client.renderer.layer.VillagerItemInHandLayer;
 import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 @OnlyIn(Dist.CLIENT)
 public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, DynastiesVillagerRenderState, DynastiesVillagerModel> {
@@ -44,6 +51,7 @@ public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, Dy
         renderState.turnLeftAnimationState.copyFrom(villager.turnLeftAnimationState);
         renderState.swingAnimationState.copyFrom(villager.swingAnimationState);
         renderState.mainArm = villager.getMainArm();
+        renderState.debugData = villager.getDebugData();
 
 
         // TODO: TEMPORARY NOBILITY FLAG
@@ -79,6 +87,40 @@ public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, Dy
 //        }
 
         pPoseStack.scale($$3, $$3, $$3);
+    }
+
+    @Override
+    public void render(DynastiesVillagerRenderState renderState, PoseStack poseStack, MultiBufferSource bufferSource, int p_115313_) {
+        super.render(renderState, poseStack, bufferSource, p_115313_);
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Font font = minecraft.font;
+        int j = (int) (minecraft.options.getBackgroundOpacity(0.25F) * 255.0F) << 24;
+
+        poseStack.pushPose();
+        poseStack.translate(0, (double) 2.5F, 0);
+        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+        poseStack.scale(0.01F, -0.01F, 0.01F);
+        Matrix4f matrix4f = poseStack.last().pose();
+
+        var desiredItems = renderState.debugData.desiredItems();
+        var moneyText = "Money: " + renderState.debugData.money();
+        StringBuilder listText = new StringBuilder("Desired: ");
+        var caloriesText = "Calories: ";
+
+        for (var itemName : desiredItems) {
+            listText.append(itemName).append(",");
+        }
+
+        font.drawInBatch(moneyText, (float) (-font.width(moneyText)) / 2.0F, 0.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+        font.drawInBatch(listText.toString(), (float) (-font.width(listText.toString())) / 2.0F, 11.0F, -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+
+        var valuations = renderState.debugData.valuations();
+        for (int i = 0; i < valuations.size(); i++) {
+            font.drawInBatch(valuations.get(i), 20.0F, 40.0F + (i * 11F), -1, false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+        }
+
+        poseStack.popPose();
     }
 
     @Override

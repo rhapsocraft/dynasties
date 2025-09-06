@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.commands.ResetValuationsCommand;
 import com.maestreaux.dynasties.core.utils.PlotUtils;
 import com.maestreaux.dynasties.init.ModBuildings;
 import com.maestreaux.dynasties.init.ModItems;
@@ -13,11 +14,13 @@ import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.command.ConfigCommand;
 
 @Mod.EventBusSubscriber(modid = DynastiesMod.MODID)
 public class GeneralModEvents {
@@ -42,6 +45,13 @@ public class GeneralModEvents {
         if (!level.isClientSide()) {
             sendZonesListPacket((ServerLevel) level, (ServerPlayer) event.getEntity());
         }
+    }
+
+    @SubscribeEvent
+    public static void onCommandsRegister(RegisterCommandsEvent event) {
+        new ResetValuationsCommand(event.getDispatcher());
+
+        ConfigCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent

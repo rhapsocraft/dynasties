@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehaviour<E> {
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
 
-    private static final Set<Item> WARES = Set.of(Items.WHEAT, Items.POTATO, Items.CARROT);
+    private static final Set<Item> WARES = Set.of(Items.WHEAT, Items.POTATO, Items.CARROT, Items.BEETROOT, Items.PORKCHOP);
 
     @Override
     protected List<Pair<MemoryModuleType<?>, MemoryStatus>> getMemoryRequirements() {

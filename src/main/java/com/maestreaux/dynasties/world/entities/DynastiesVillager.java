@@ -196,9 +196,11 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new NearbyPlayersSensor<>(),
                 new AvailableTentsSensor<>(),
                 new AvailableFoodSensor<>(),
+                new AvailableMealSensor<>(),
                 new LivestockSensor<>(),
-                new HomeCampfiresSensor<>(),
-                new IngredientsSensor<>()
+                new HomeCookingPotSensor<>(),
+                new IngredientsSensor<>(),
+                new BestMealSensor<>()
         );
     }
 
@@ -206,7 +208,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.idleTasks(
                 //new GoHome<>(),
                 new TargetOrRetaliate<>(),
-                new FirstApplicableBehaviour<>(new CollectTaxes<>().startCondition(AbstractDynastyVillager::isNobility), new EatFood<>(), new FetchFood<>(), new PickUpItems<>(), new ReturnItems<>())
+                new FirstApplicableBehaviour<>(new CollectTaxes<>().startCondition(AbstractDynastyVillager::isNobility), new EatFood<>(),
+                        new FetchMeal<>(), new FetchFood<>(), new PickUpItems<>(), new ReturnItems<>())
         );
     }
 

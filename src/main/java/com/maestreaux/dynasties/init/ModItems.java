@@ -14,6 +14,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import static com.maestreaux.dynasties.init.ModMealTypes.*;
@@ -53,9 +55,20 @@ public class ModItems {
     ));
 
     public static final RegistryObject<Item> SPOON = register("spoon", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))));
-    public static final RegistryObject<Item> BEEF_POTATO_STEW_MEAL = register("beef_potato_stew", (name) -> new Meal(
-            new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))
-    , ModMealTypes.getMealType(BEEF_POTATO_STEW)));
+
+    public static final RegistryObject<Item> WOOL_YARN = register("wool_yarn", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
+    public static final RegistryObject<Item> WOOL_CLOTH = register("wool_cloth", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
+    public static final RegistryObject<Item> WOOL_TUNIC = register("wool_tunic", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(1)));
+    public static final RegistryObject<Item> WOOL_PANTS = register("wool_pants", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(1)));
+
+    public static final RegistryObject<Item> LINEN_CLOTH = register("linen_cloth", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
+    public static final RegistryObject<Item> SILK_CLOTH = register("silk_cloth", (name) -> new Item(new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name))).stacksTo(16)));
+
+//    public static final RegistryObject<Item> BEEF_POTATO_STEW_MEAL = register("beef_potato_stew", (name) -> new Meal(
+//            new Item.Properties().setId(ResourceKey.create(ForgeRegistries.ITEMS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))
+//    , ModMealTypes.getMealType(BEEF_POTATO_STEW)));
+
+    public static final List<RegistryObject<Item>> MEAL_ITEMS = new ArrayList<>();
 
     public static RegistryObject<Item> register(String name, Function<String, Item> itemFn) {
         return ITEMS.register(name, () -> itemFn.apply(name));
@@ -78,9 +91,23 @@ public class ModItems {
 
     public static final RegistryObject<CreativeModeTab> MEALS_TAB = CREATIVE_MODE_TABS.register("villager_dynasties_meals", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(ModItems.BEEF_POTATO_STEW_MEAL.get()::getDefaultInstance)
+            .icon(ModItems.MEAL_ITEMS.getFirst().get()::getDefaultInstance)
             .displayItems((parameters, output) -> {
-                output.accept(BEEF_POTATO_STEW_MEAL.get());
+                for (var mealItem : MEAL_ITEMS) {
+                    output.accept(mealItem.get());
+                }
+            }).build());
+
+    public static final RegistryObject<CreativeModeTab> TEXTILES_TAB = CREATIVE_MODE_TABS.register("villager_dynasties_textiles", () -> CreativeModeTab.builder()
+            .withTabsBefore(CreativeModeTabs.COMBAT)
+            .icon(ModItems.WOOL_CLOTH.get()::getDefaultInstance)
+            .displayItems((parameters, output) -> {
+                output.accept(WOOL_YARN.get());
+                output.accept(WOOL_CLOTH.get());
+                output.accept(WOOL_TUNIC.get());
+                output.accept(WOOL_PANTS.get());
+                output.accept(LINEN_CLOTH.get());
+                output.accept(SILK_CLOTH.get());
             }).build());
 
 }

@@ -62,7 +62,6 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
                                 if (inventory == entityTradeInv) {
                                     var marketAgent = entity.asMarketAgent();
                                     marketAgent.removeOffer(item);
-                                    marketAgent.adjustValuation(item);
                                 }
 
                                 if (currentSlot > (currentInventory.getSlots() - 1)) {

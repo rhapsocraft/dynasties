@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.client.renderer.entity.state;
 
+import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.world.entity.AnimationState;
 
@@ -24,6 +25,7 @@ public class DynastiesVillagerRenderState extends ArmedEntityRenderState {
     public boolean showCrossedArms = true;
     public boolean doHeadRotation = true;
     public boolean isHoldingBlock = false;
+    public AbstractDynastyVillager.DynastyVillagerDebugData debugData = null;
 
     // TODO: TEMPORARY NOBILITY FLAG
     public boolean isNobility = false;

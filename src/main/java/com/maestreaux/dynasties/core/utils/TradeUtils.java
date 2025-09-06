@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +35,8 @@ public class TradeUtils {
         var tradeOffers = new ArrayList<Pair<MarketAgent.TradeOffer, Float>>();
 
         for (var otherTrader : otherTraders) {
+            if (otherTrader == trader) continue;
+
             var traderAgent = otherTrader.asMarketAgent();
             var activeOffers = traderAgent.getActiveOffers();
 
@@ -41,7 +44,7 @@ public class TradeUtils {
             for (var tradeOffer : activeOffers.entrySet()) {
                 var itemOffered = tradeOffer.getKey();
 
-                if (ALL_RECIPE_INGREDIENTS.contains(itemOffered)) {
+                if (ALL_RECIPE_INGREDIENTS.contains(itemOffered) && !itemOffered.equals(Items.AIR)) {
                     var desirability = MealUtils.getOfferedIngredientDesirability(trader, otherTrader, itemOffered);
                     tradeOffers.add(new Pair<>(tradeOffer.getValue(), desirability));
                 }
@@ -49,7 +52,7 @@ public class TradeUtils {
         }
 
         return tradeOffers.stream()
-                .sorted((offer1, offer2) -> Float.compare(offer1.getSecond(), offer2.getSecond())).collect(Collectors.toList());
+                .sorted((offer1, offer2) -> Float.compare(offer2.getSecond(), offer1.getSecond())).collect(Collectors.toList());
     }
 
 }

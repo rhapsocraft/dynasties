@@ -33,12 +33,20 @@ public class AdjustValuationsAndPrices<E extends AbstractDynastyVillager> extend
 
             var desiredSupply = entity.asMarketAgent().getDesiredSupply(item);
             var currentSupply = InventoryUtils.getItemSupply(containers, item);
-            var surplusPercentage = ((float) desiredSupply / currentSupply);
-            var weightedAverage = 0.5F * surplusPercentage + 0.5F;
 
-            valuations.put(item, valuation * weightedAverage);
+            float difference = desiredSupply - currentSupply;
+            float valuationIncrease = 1F + (0.05F * (float)Math.tanh(difference / 5F));
+
+            valuations.put(item, valuation * valuationIncrease);
+
+            var activeOffer = marketAgent.getActiveOffers().get(item);
+
+            if (activeOffer != null) {
+                activeOffer.setPrice(marketAgent.getItemPrice(item));
+            }
         }
 
+        entity.updateTradeOffers();
         marketAgent.valuationsLastUpdated = entity.level().getGameTime();
     }
 

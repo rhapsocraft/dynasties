@@ -5,20 +5,22 @@ import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.Consumable;
 import net.tslat.smartbrainlib.api.core.behaviour.DelayedBehaviour;
 
 import java.util.List;
 
 public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour<E> {
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
-    private ItemStack foodItem;
+    private Item itemBeingEaten;
+    private InteractionResult eatResult;
+
     private int consumedItemNutrition = 0;
 
     public EatFood() {
@@ -27,11 +29,14 @@ public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour
 
     @Override
     protected void doDelayedAction(E entity) {
-        if (this.foodItem != null) {
+        if (this.eatResult != null && this.itemBeingEaten != null && this.eatResult == InteractionResult.CONSUME) {
             // foodItem.shrink(1);
             entity.setHunger(entity.getHunger() + (1000 * this.consumedItemNutrition));
-            entity.eatFood(this.foodItem.getItem());
+            entity.eatFood(this.itemBeingEaten);
         }
+
+        this.itemBeingEaten = null;
+        this.eatResult = null;
 
         entity.setIsEating(false);
     }
@@ -39,21 +44,23 @@ public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour
     @Override
     protected void start(E entity) {
         // TODO: sorted by preference
-        this.foodItem = entity.getInventory().getItems().stream().filter(item -> Dictionaries.FOOD.contains(item.getItem())).findFirst().orElse(null);
+        ItemStack foodItemStack = entity.getInventory().getItems().stream().filter(item -> Dictionaries.FOOD.contains(item.getItem())).findFirst().orElse(null);
         this.consumedItemNutrition = 0;
 
-        if (this.foodItem != null) {
-            var consumable = this.foodItem.get(DataComponents.CONSUMABLE);
-            var foodComponent = this.foodItem.get(DataComponents.FOOD);
+        if (foodItemStack != null) {
+            var consumable = foodItemStack.get(DataComponents.CONSUMABLE);
+            var foodComponent = foodItemStack.get(DataComponents.FOOD);
 
             if (consumable != null) {
-                entity.setItemInHand(InteractionHand.MAIN_HAND, this.foodItem);
+                entity.setItemInHand(InteractionHand.MAIN_HAND, foodItemStack);
 
                 if (foodComponent != null) {
                     this.consumedItemNutrition = foodComponent.nutrition();
                 }
 
-                consumable.startConsuming(entity, this.foodItem, InteractionHand.MAIN_HAND);
+                this.eatResult = consumable.startConsuming(entity, foodItemStack, InteractionHand.MAIN_HAND);
+                this.itemBeingEaten = foodItemStack.getItem();
+
                 entity.setIsEating(true);
             }
         }

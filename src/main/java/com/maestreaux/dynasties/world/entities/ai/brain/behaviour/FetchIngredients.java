@@ -3,7 +3,6 @@ package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.core.utils.AIUtils;
-import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -14,7 +13,6 @@ import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
-import net.minecraft.world.item.ItemStack;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtil;
 
@@ -47,10 +45,11 @@ public class FetchIngredients<E extends AbstractDynastyVillager> extends Extende
             }
         }
 
-        var campfires = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CAMPFIRES.get());
+        var campfires = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CAMPFIRE_POTS.get());
         if (campfires != null) {
             var campfire = campfires.getFirst();
-            isCampfireAvailable = campfire != null && campfire.getItems().stream().anyMatch(ItemStack::isEmpty);
+//            isCampfireAvailable = campfire != null && campfire.getItems().stream().anyMatch(ItemStack::isEmpty);
+            isCampfireAvailable = false;
         }
 
         return !entity.getInventory().hasAnyOf(Dictionaries.INGREDIENTS) && isCampfireAvailable && jobAvailable && AIUtils.shouldCook(entity);
