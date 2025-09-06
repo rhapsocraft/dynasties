@@ -9,6 +9,7 @@ import net.minecraftforge.network.*;
 public class PacketHandler {
     private static final int PROTOCOL_VERSION = 1;
     private static int packetId = 0;
+
     private static int id() {
         return packetId++;
     }
@@ -40,6 +41,11 @@ public class PacketHandler {
         INSTANCE.messageBuilder(CUpdateSimulatedEntity.class, id(), NetworkDirection.PLAY_TO_CLIENT)
                 .codec(CUpdateSimulatedEntity.STREAM_CODEC)
                 .consumerMainThread(CUpdateSimulatedEntity::handle)
+                .add();
+
+        INSTANCE.messageBuilder(CRemoveSimulatedEntity.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CRemoveSimulatedEntity.STREAM_CODEC)
+                .consumerMainThread(CRemoveSimulatedEntity::handle)
                 .add();
 
         INSTANCE.messageBuilder(CSimulatedEntitiesList.class, id(), NetworkDirection.PLAY_TO_CLIENT)

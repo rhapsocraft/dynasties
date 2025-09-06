@@ -1,7 +1,8 @@
-package com.maestreaux.dynasties.core.simulation;
+package com.maestreaux.dynasties.core.simulation.entity;
 
 import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.core.MealType;
+import com.maestreaux.dynasties.core.simulation.Simulator;
 import com.maestreaux.dynasties.init.ModMealTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
@@ -21,7 +22,7 @@ import net.minecraft.world.item.Item;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SimulatedVillagerEntity extends SimulatedEntity<AbstractDynastyVillager> {
+public class VillagerEntitySimulated extends EntitySimulated<AbstractDynastyVillager> {
     protected List<Plot> occupiedPlots = new ArrayList<>();
     protected List<Plot.Slot> occupiedSlots = new ArrayList<>();
     protected Zone homeZone;
@@ -31,18 +32,20 @@ public class SimulatedVillagerEntity extends SimulatedEntity<AbstractDynastyVill
 
     protected int hunger = 2_000;
     protected int maxHunger = 15_000;
-    protected SimulatedVillagerEntity.Stomach stomach = new SimulatedVillagerEntity.Stomach();
+    protected VillagerEntitySimulated.Stomach stomach = new VillagerEntitySimulated.Stomach();
 
     protected final SimpleContainer inventory = new SimpleContainer(8);
     protected final SimpleContainer tradeInventory = new SimpleContainer(8);
     protected final DebugData debugData = new DebugData(List.of(), List.of(), 0);
 
-    public SimulatedVillagerEntity(AbstractDynastyVillager villager) {
+    public VillagerEntitySimulated(AbstractDynastyVillager villager) {
         super(villager);
+
+        this.tickingEntity = true;
         this.type = SimulatedEntityType.VILLAGER;
     }
 
-    public SimulatedVillagerEntity(ServerLevel level) {
+    public VillagerEntitySimulated(ServerLevel level) {
         super(level);
     }
 
@@ -56,10 +59,8 @@ public class SimulatedVillagerEntity extends SimulatedEntity<AbstractDynastyVill
     @Override
     protected AbstractDynastyVillager spawnEntity() {
         var newEntity = new DynastiesVillager(this.level, this);
-        newEntity.setUUID(this.uuid);
-        level.addFreshEntity(newEntity);
 
-        newEntity.load(this.entitySavedData);
+        super.spawnEntity(newEntity);
 
         return newEntity;
     }
@@ -122,7 +123,7 @@ public class SimulatedVillagerEntity extends SimulatedEntity<AbstractDynastyVill
         this.stomach.add(item, this.level.getGameTime());
     }
 
-    public SimulatedVillagerEntity.Stomach getStomach() {
+    public VillagerEntitySimulated.Stomach getStomach() {
         return this.stomach;
     }
 

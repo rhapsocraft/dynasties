@@ -1,9 +1,9 @@
 package com.maestreaux.dynasties.world;
 
-import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
+import com.maestreaux.dynasties.core.simulation.cache.ZoneCache;
+import com.maestreaux.dynasties.core.simulation.entity.VillagerEntitySimulated;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CAddZone;
-import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.AABB;
@@ -31,11 +32,13 @@ public class Zone {
     private BlockPos center;
     private AABB boundingBox;
     private List<Plot> plots = new ArrayList<>();
-    private final Set<SimulatedVillagerEntity> residents = new HashSet<>();
+    private final Set<VillagerEntitySimulated> residents = new HashSet<>();
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final Level level;
     private final ResourceKey<Level> dimension;
+    public ZoneCache cache;
+
     public static List<Zone> ZONES = new ArrayList<>();
 
     public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension) {
@@ -58,6 +61,12 @@ public class Zone {
     public Zone(Level level, BlockPos center) {
         this(level);
         this.setCenter(center);
+
+        if (!level.isClientSide) {
+            this.cache = new ZoneCache((ServerLevel) level, this);
+            this.cache.indexBlocks(this.boundingBox);
+            this.cache.cacheSections(this.boundingBox);
+        }
     }
 
     public static Zone getContainerZone(ServerLevel level, Vec3i pos) {
@@ -129,11 +138,11 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
-    public void addResident(SimulatedVillagerEntity villager) {
+    public void addResident(VillagerEntitySimulated villager) {
         this.residents.add(villager);
     }
 
-    public Set<SimulatedVillagerEntity> getResidents() {
+    public Set<VillagerEntitySimulated> getResidents() {
         return this.residents;
     }
 

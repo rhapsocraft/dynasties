@@ -10,6 +10,7 @@ import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CAddPlot;
 import com.maestreaux.dynasties.network.message.CSimulatedEntitiesList;
+import com.maestreaux.dynasties.network.message.CUpdateSimulatedEntity;
 import com.maestreaux.dynasties.network.message.CZonesList;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
@@ -67,11 +68,11 @@ public class GeneralModEvents {
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            // Implement for only Overworld for now
+            // Implement only on Overworld for now
             var level = event.getServer().getLevel(ServerLevel.OVERWORLD);
 
             var currentTick = event.getServer().getTickCount();
-            if (currentTick % 10 == 0) {
+            if (currentTick % Simulator.TICK_INTERVAL == 0) {
 
 
                 Simulator.doTick(level, currentTick);
@@ -103,15 +104,18 @@ public class GeneralModEvents {
 
                     Zone.add(serverLevel, newZone);
 
-                    for (int i = 0; i < 8; i++) {
-                        var newVillager = new DynastiesVillager(serverLevel, newZone);
-                        serverLevel.addFreshEntity(newVillager);
-                        newVillager.moveTo(newZone.getCenter().above().getCenter());
-                    }
+//                    for (int i = 0; i < 8; i++) {
+//                        var newVillager = new DynastiesVillager(serverLevel, newZone);
+//                        serverLevel.addFreshEntity(newVillager);
+//                        newVillager.moveTo(newZone.getCenter().above().getCenter());
+//                    }
                 } else {
-                    var newVillager = new DynastiesVillager(serverLevel);
+                    var newVillager = new DynastiesVillager(serverLevel, hitPos.above());
+                    var newSimEntity = newVillager.getSimEntity();
+
                     serverLevel.addFreshEntity(newVillager);
-                    newVillager.moveTo(event.getHitVec().getLocation());
+
+                    PacketHandler.sendToAll(new CUpdateSimulatedEntity(newSimEntity));
                 }
             } else if (event.getItemStack().is(ModItems.DEBUG_TOOL_PLOT_CONVERTER.get())) {
                 var parentZone = Zone.getContainerZone(serverLevel, hitPos);

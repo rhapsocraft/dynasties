@@ -1,8 +1,8 @@
 package com.maestreaux.dynasties.network.message;
 
 import com.maestreaux.dynasties.DynastiesMod;
-import com.maestreaux.dynasties.core.simulation.entity.EntitySimulated;
 import com.maestreaux.dynasties.core.simulation.SimulationState;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -12,16 +12,18 @@ import net.minecraftforge.event.network.CustomPayloadEvent;
 import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.NotNull;
 
-public record CUpdateSimulatedEntity(EntitySimulated<?> entity) implements CustomPacketPayload {
+import java.util.UUID;
+
+public record CRemoveSimulatedEntity(UUID uuid) implements CustomPacketPayload {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, "update_sim_entity");
-    public static final Type<CUpdateSimulatedEntity> TYPE = new Type<>(ID);
+    public static final Type<CRemoveSimulatedEntity> TYPE = new Type<>(ID);
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, CUpdateSimulatedEntity> STREAM_CODEC = StreamCodec.composite(EntitySimulated.STREAM_CODEC, CUpdateSimulatedEntity::entity, CUpdateSimulatedEntity::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, CRemoveSimulatedEntity> STREAM_CODEC = StreamCodec.composite(UUIDUtil.STREAM_CODEC, CRemoveSimulatedEntity::uuid, CRemoveSimulatedEntity::new);
 
-    public static void handle(CUpdateSimulatedEntity message, CustomPayloadEvent.Context context) {
+    public static void handle(CRemoveSimulatedEntity message, CustomPayloadEvent.Context context) {
         context.enqueueWork(() -> {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                SimulationState.CLIENT_ENTITIES.put(message.entity.getUUID(), message.entity);
+                SimulationState.CLIENT_ENTITIES.remove(message.uuid());
             });
         });
 

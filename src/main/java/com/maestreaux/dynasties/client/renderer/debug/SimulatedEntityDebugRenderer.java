@@ -29,7 +29,7 @@ public class SimulatedEntityDebugRenderer {
             Vec3 cam = camera.getPosition();
             matrixStack.translate(-cam.x, -cam.y, -cam.z);
 
-            ShapeRenderer.renderLineBox(matrixStack, vertexConsumer, entityPos.getX(), entityPos.getY(), entityPos.getZ(), entityPos.getX() + 1D, entityPos.getY() + 1D, entityPos.getZ() + 1D, 6.6f, 15.9f, 6.6f, 15.5f);
+            ShapeRenderer.renderLineBox(matrixStack, vertexConsumer, entityPos.getX(), entityPos.getY(), entityPos.getZ(), entityPos.getX() + 1D, entityPos.getY() + 2D, entityPos.getZ() + 1D, 6.6f, 15.9f, 6.6f, 15.5f);
 
             matrixStack.popPose();
         }

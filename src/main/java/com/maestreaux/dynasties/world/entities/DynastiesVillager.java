@@ -2,7 +2,7 @@ package com.maestreaux.dynasties.world.entities;
 
 import com.maestreaux.dynasties.client.ClientHooks;
 import com.maestreaux.dynasties.core.Dictionaries;
-import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
+import com.maestreaux.dynasties.core.simulation.entity.VillagerEntitySimulated;
 import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.blocks.Tent;
@@ -43,7 +43,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @SuppressWarnings("unchecked")
 public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
@@ -78,7 +77,11 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         super(serverLevel);
     }
 
-    public DynastiesVillager(ServerLevel serverLevel, SimulatedVillagerEntity simEntity) {
+    public DynastiesVillager(ServerLevel serverLevel, BlockPos pos) {
+        super(serverLevel, pos);
+    }
+
+    public DynastiesVillager(ServerLevel serverLevel, VillagerEntitySimulated simEntity) {
         super(serverLevel, simEntity);
     }
 

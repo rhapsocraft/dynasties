@@ -2,7 +2,7 @@ package com.maestreaux.dynasties.core.utils;
 
 import com.maestreaux.dynasties.core.ItemLocation;
 import com.maestreaux.dynasties.core.MealType;
-import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
+import com.maestreaux.dynasties.core.simulation.entity.VillagerEntitySimulated;
 import com.maestreaux.dynasties.init.ModMealTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -29,7 +29,7 @@ public class MealUtils {
         return mealType.getRecipe().getIngredients().entrySet().stream().anyMatch(entry -> entry.getKey() == ingredient && entry.getValue() <= ingredientCount);
     }
 
-    private static float getCravingScore(SimulatedVillagerEntity villager, MealType mealType) {
+    private static float getCravingScore(VillagerEntitySimulated villager, MealType mealType) {
         var stomach = villager.getStomach();
         var stomachNutrients = stomach.calculateNutrition(villager.level().getGameTime());
         var mealNutrients = mealType.getNutrients();

@@ -1,29 +1,22 @@
 package com.maestreaux.dynasties.world.entities.base;
 
 import com.maestreaux.dynasties.core.MarketAgent;
-import com.maestreaux.dynasties.core.simulation.SimulatedEntity;
-import com.maestreaux.dynasties.core.simulation.SimulatedVillagerEntity;
+import com.maestreaux.dynasties.core.simulation.entity.VillagerEntitySimulated;
 import com.maestreaux.dynasties.core.simulation.SimulationState;
 import com.maestreaux.dynasties.init.ModEntityDataSerializers;
 import com.maestreaux.dynasties.init.ModEntityTypes;
-import com.maestreaux.dynasties.network.PacketHandler;
-import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.AgeableMob;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +29,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     // TODO: TEMPORARY NOBILITY FLAG
     private static final EntityDataAccessor<Boolean> IS_NOBILITY = SynchedEntityData.defineId(AbstractDynastyVillager.class, EntityDataSerializers.BOOLEAN);
 
-    protected SimulatedVillagerEntity simEntity;
+    protected VillagerEntitySimulated simEntity;
 
     protected AbstractDynastyVillager(EntityType<? extends AgeableMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -47,11 +40,19 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     protected AbstractDynastyVillager(ServerLevel level) {
         this(ModEntityTypes.DYNASTY_VILLAGER.get(), level);
 
-        this.simEntity = (SimulatedVillagerEntity) SimulationState.addEntity(level, new SimulatedVillagerEntity(this));
+        this.initializeSimEntity(level);
+    }
+
+    // This constructor should be called for the first time an entity is created
+    protected AbstractDynastyVillager(ServerLevel level, BlockPos pos) {
+        this(ModEntityTypes.DYNASTY_VILLAGER.get(), level);
+        this.setPos(pos.getCenter());
+
+        this.initializeSimEntity(level);
     }
 
     // This constructor should be called by the simulator when needing to spawn a simulated entity
-    protected AbstractDynastyVillager(ServerLevel level, SimulatedVillagerEntity simEntity) {
+    protected AbstractDynastyVillager(ServerLevel level, VillagerEntitySimulated simEntity) {
         this(ModEntityTypes.DYNASTY_VILLAGER.get(), level);
         this.uuid = simEntity.getUUID();
         this.simEntity = simEntity;
@@ -63,6 +64,10 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         synchedData.define(IS_FLEEING, false);
         synchedData.define(IS_EATING, false);
         synchedData.define(IS_NOBILITY, false);
+    }
+
+    private void initializeSimEntity(ServerLevel level) {
+        this.simEntity = (VillagerEntitySimulated) SimulationState.addEntity(level, new VillagerEntitySimulated(this));
     }
 
     public boolean isFleeing() {
@@ -89,7 +94,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         this.entityData.set(TRADE_OFFERS, newList, true);
     }
 
-    public SimulatedVillagerEntity getSimEntity() {
+    public VillagerEntitySimulated getSimEntity() {
         return this.simEntity;
     }
 
