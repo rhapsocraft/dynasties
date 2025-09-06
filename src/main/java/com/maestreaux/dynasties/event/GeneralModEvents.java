@@ -66,21 +66,6 @@ public class GeneralModEvents {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            // Implement only on Overworld for now
-            var level = event.getServer().getLevel(ServerLevel.OVERWORLD);
-
-            var currentTick = event.getServer().getTickCount();
-            if (currentTick % Simulator.TICK_INTERVAL == 0) {
-
-
-                Simulator.doTick(level, currentTick);
-            }
-        }
-    }
-
-    @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         var house = ModBuildings.BUILDINGS;
 

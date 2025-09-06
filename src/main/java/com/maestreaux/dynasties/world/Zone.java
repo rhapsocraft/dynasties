@@ -17,7 +17,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.datafix.DataFixTypes;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.AABB;
@@ -106,7 +105,6 @@ public class Zone {
             var endPos = this.center.subtract(new Vec3i(-16, -12, -16));
             this.boundingBox = new AABB(Vec3.atLowerCornerOf(startPos), Vec3.atLowerCornerOf(endPos));
     }
-
 
     public Level level() {
         return this.level;

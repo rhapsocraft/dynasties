@@ -20,10 +20,6 @@ public class Simulator {
         return LAST_TICK - currentTick;
     }
 
-    public static SimulationBlockGetter simulationGetter(ServerLevel level) {
-        return new SimulationBlockGetter(level);
-    }
-
     public static void doTick(ServerLevel level, int currentTick) {
         if (LAST_TICK == -1) {
             LAST_TICK = currentTick;
@@ -31,6 +27,7 @@ public class Simulator {
             TICK_DIFFERENCE = getTickDifference(currentTick);
         }
 
+        doRandomTick(level);
         tickEntities(level);
     }
 
@@ -45,20 +42,28 @@ public class Simulator {
         var randomTicks = randomTickSpeed * TICK_INTERVAL;
 
         if (randomTickSpeed > 0) {
+            // TODO: Possible overlap of sections causing sections to be ticked more times than necessary
             for (var zone : Zone.getZones(level)) {
                 var cache = zone.cache;
 
                 var cacheMap = cache.getCacheMap();
-                var sections = cache.getSections();
+                var chunks = cache.getChunks();
 
-                for (var section : sections) {
-                    for (int t = 0; t < randomTicks; t++) {
-                        var blockPos = level.getBlockRandomPos(section.minBlockX(), section.minBlockY(), section.minBlockZ(), 15);
+                for (var chunk : chunks) {
+                    if (!level.hasChunk(chunk.x, chunk.z)) {
+                        var sections = cache.getSections(chunk);
 
-                        var blockToTick = cacheMap.get(blockPos);
+                        for (var section : sections) {
+                            for (int t = 0; t < randomTicks; t++) {
+                                // Replicates `ServerLevel.tickChunk` random tick implementation
+                                var blockPos = level.getBlockRandomPos(section.minBlockX(), section.minBlockY(), section.minBlockZ(), 15);
 
-                        if (blockToTick != null) {
-                            blockToTick.randomTick();
+                                var blockToTick = cacheMap.get(blockPos);
+
+                                if (blockToTick != null) {
+                                    blockToTick.randomTick();
+                                }
+                            }
                         }
                     }
                 }
