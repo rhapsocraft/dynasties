@@ -43,6 +43,7 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
                         if (entity.level().setBlock(blockPos, blockState, 3)) {
                             entity.swing(InteractionHand.MAIN_HAND);
                             entity.playSound(blockState.getBlock().getSoundType(blockState, entity.level(), blockPos, entity).getPlaceSound());
+
                             this.cooldownFor((e) -> 15);
                         } else {
                             this.cooldownFor((e) -> 0);
@@ -52,7 +53,7 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
                         partitionToBuildOn.incrementConstructionCursor();
                     } else {
                         BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.targetPos));
-                        BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetPos, 0.6F, 1));
+                        BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetPos, 0.6F, 2));
                     }
                 } else {
                     var blockToPlaceInfo = partitionToBuildOn.getBlocks().get(partitionToBuildOn.getConstructionCursor());

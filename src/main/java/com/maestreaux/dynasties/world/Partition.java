@@ -61,6 +61,13 @@ public class Partition {
         this.setOrigin(relativeOrigin);
     }
 
+    public Partition copy() {
+        var partitionToCopy = new Partition(this.width, this.length, this.type, this.construction, this.weight);
+        partitionToCopy.placementPredicates = this.placementPredicates;
+
+        return partitionToCopy;
+    }
+
     public void setRotation(Rotation rotation) {
         this.rotation = rotation;
     }
@@ -158,7 +165,7 @@ public class Partition {
 
         compoundTag.putInt("villagerdynasties:construction_cursor", this.constructionCursor);
         compoundTag.putString("villagerdynasties:partition_type", this.type.name());
-        compoundTag.putString("villagerdynasties:partition_rotation", this.rotation.getSerializedName());
+        compoundTag.putString("villagerdynasties:partition_rotation", this.rotation.toString());
 
         var buildingKey = ModBuildings.BUILDINGS_REGISTRY.get().getKey(this.construction);
 
@@ -183,6 +190,7 @@ public class Partition {
     public enum PartitionType {
         HOME,
         GARDEN,
+        RANCH,
     }
 
     static {

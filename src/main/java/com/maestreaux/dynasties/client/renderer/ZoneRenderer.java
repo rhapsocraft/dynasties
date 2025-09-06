@@ -6,47 +6,27 @@ import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.world.Partition;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
-import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.maestreaux.dynasties.world.items.debug.DebugPlottingToolItem;
-import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
-import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.resource.CrossFrameResourcePool;
-import com.mojang.blaze3d.resource.ResourceHandle;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.entity.EntityTypeTest;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
 
-import java.awt.*;
-import java.util.List;
-
 @Mod.EventBusSubscriber(modid = DynastiesMod.MODID, value = Dist.CLIENT)
-
-
 public class ZoneRenderer {
 //    public static void drawZoneSquare(PoseStack matrixStack, Camera camera, Vec3i surfacePos) {
 //        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -167,6 +147,8 @@ public class ZoneRenderer {
 
     public static void drawZonePlots(PoseStack matrixStack, Camera camera, MultiBufferSource.BufferSource bufferSource, Zone zone) {
         var plots = zone.getPlots();
+        Minecraft minecraft = Minecraft.getInstance();
+        Font font = minecraft.font;
 
         for (var plot : plots) {
             var plotStartPos = plot.getStartPos().offset(zone.getCenter());
@@ -187,6 +169,31 @@ public class ZoneRenderer {
         }
     }
 
+    public static void drawZonePlotNames(PoseStack matrixStack, Camera camera, MultiBufferSource.BufferSource bufferSource, Zone zone) {
+        var plots = zone.getPlots();
+        Minecraft minecraft = Minecraft.getInstance();
+        Font font = minecraft.font;
+
+        for (var plot : plots) {
+            var plotStartPos = plot.getStartPos().offset(zone.getCenter());
+            var plotEndPos = plot.getEndPos().offset(zone.getCenter()).offset(1, 0, 1);
+
+            matrixStack.pushPose();
+            Vec3 cam = camera.getPosition();
+            matrixStack.translate((double) ((plot.getAbsoluteStartPos().getX() + plot.getAbsoluteEndPos().getX()) / 2) + 1D, plot.getAbsoluteStartPos().getY() + (double)7F,  (double) ((plot.getAbsoluteStartPos().getZ() + plot.getAbsoluteEndPos().getZ()) / 2) + 1D);
+            matrixStack.translate(-cam.x, -cam.y, -cam.z);
+            matrixStack.mulPose(camera.rotation());
+            matrixStack.scale(0.025F, -0.025F, 0.025F);
+
+            Matrix4f matrix4f = matrixStack.last().pose();
+
+            int j = (int)(minecraft.options.getBackgroundOpacity(0.25F) * 255.0F) << 24;
+            font.drawInBatch(plot.getTypeName(), (float)(-font.width(plot.getTypeName())) / 2.0F, 0.0F, -1,false, matrix4f, bufferSource, Font.DisplayMode.NORMAL, j, LightTexture.lightCoordsWithEmission(15728640, 2));
+
+            matrixStack.popPose();
+        }
+    }
+
     public static void drawVillagerInfo(PoseStack matrixStack, Camera camera,  MultiBufferSource.BufferSource bufferSource) {
         Minecraft minecraft = Minecraft.getInstance();
         var player = minecraft.player;
@@ -200,6 +207,7 @@ public class ZoneRenderer {
         for (var zone : Zone.getZones()) {
             drawZoneBox(poseStack, camera, bufferSource, zone);
             drawZonePlots(poseStack, camera, bufferSource, zone);
+            drawZonePlotNames(poseStack, camera, bufferSource, zone);
             drawPrePlot(poseStack, camera, bufferSource, zone);
         }
     }

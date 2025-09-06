@@ -310,7 +310,6 @@ public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderS
             renderState.doHeadRotation = true;
         }
 
-
         // IDLE
         animate(renderState.idleFaceAnimationState, DynastiesVillagerAnimation.FACE_1, renderState.ageInTicks);
         animate(renderState.idleAnimationState, IDLE1_ANIM, renderState.ageInTicks, 0.5F);

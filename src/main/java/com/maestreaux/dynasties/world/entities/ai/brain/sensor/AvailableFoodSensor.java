@@ -1,10 +1,12 @@
 package com.maestreaux.dynasties.world.entities.ai.brain.sensor;
 
+import com.maestreaux.dynasties.core.Dictionaries;
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.init.ModSensorTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
@@ -23,7 +25,7 @@ public class AvailableFoodSensor<E extends AbstractDynastyVillager> extends Exte
         var containers = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
 
         if (containers != null) {
-            var foodLocations = InventoryUtils.getItemLocations(containers, Set.of(Items.CARROT, Items.POTATO)).values().stream().flatMap(List::stream).toList();
+            var foodLocations = InventoryUtils.getItemLocations(containers, Dictionaries.FOOD).values().stream().flatMap(List::stream).sorted(InventoryUtils.itemLocationNutritionSorter).toList();
 
             if (foodLocations.isEmpty()) {
                 BrainUtil.clearMemory(entity, ModMemoryTypes.AVAILABLE_FOOD.get());

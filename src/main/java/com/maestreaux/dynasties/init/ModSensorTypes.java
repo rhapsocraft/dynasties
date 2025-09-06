@@ -11,9 +11,12 @@ public class ModSensorTypes {
     public static final DeferredRegister<SensorType<?>> SENSOR_TYPES = DeferredRegister.create(ForgeRegistries.Keys.SENSOR_TYPES, DynastiesMod.MODID);
     public static final RegistryObject<SensorType<AvailablePlotsSensor<?>>> AVAILABLE_PLOTS = SENSOR_TYPES.register("available_plots", () -> new SensorType<>(AvailablePlotsSensor::new));
     public static final RegistryObject<SensorType<AvailableTentsSensor<?>>> AVAILABLE_TENTS = SENSOR_TYPES.register("available_tents", () -> new SensorType<>(AvailableTentsSensor::new));
-    public static final RegistryObject<SensorType<FarmlandsSensor<?>>> FARMLANDS = SENSOR_TYPES.register("farmlands", () -> new SensorType<>(FarmlandsSensor::new));
+    public static final RegistryObject<SensorType<FarmlandsSensor<?>>> HOME_FARMLANDS = SENSOR_TYPES.register("farmlands", () -> new SensorType<>(FarmlandsSensor::new));
     public static final RegistryObject<SensorType<HomeContainersSensor<?>>> HOME_CONTAINERS = SENSOR_TYPES.register("home_containers", () -> new SensorType<>(HomeContainersSensor::new));
     public static final RegistryObject<SensorType<AvailableSeedsSensor<?>>> AVAILABLE_SEEDS = SENSOR_TYPES.register("home_storages", () -> new SensorType<>(AvailableSeedsSensor::new));
     public static final RegistryObject<SensorType<FullyGrownCropsSensor<?>>> FULLY_GROWN_CROPS = SENSOR_TYPES.register("fully_grown_crops", () -> new SensorType<>(FullyGrownCropsSensor::new));
     public static final RegistryObject<SensorType<AvailableFoodSensor<?>>> AVAILABLE_FOOD = SENSOR_TYPES.register("available_food", () -> new SensorType<>(AvailableFoodSensor::new));
+    public static final RegistryObject<SensorType<LivestockSensor<?>>> HOME_LIVESTOCK = SENSOR_TYPES.register("home_livestock", () -> new SensorType<>(LivestockSensor::new));
+    public static final RegistryObject<SensorType<IngredientsSensor<?>>> INGREDIENTS = SENSOR_TYPES.register("ingredients", () -> new SensorType<>(IngredientsSensor::new));
+    public static final RegistryObject<SensorType<HomeCampfiresSensor<?>>> HOME_CAMPFIRES = SENSOR_TYPES.register("home_campfires", () -> new SensorType<>(HomeCampfiresSensor::new));
 }

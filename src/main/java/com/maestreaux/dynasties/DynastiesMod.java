@@ -1,14 +1,11 @@
 package com.maestreaux.dynasties;
 
 import com.maestreaux.dynasties.network.PacketHandler;
-import com.maestreaux.dynasties.world.Zone;
-import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.mojang.logging.LogUtils;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.Items;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -38,6 +35,7 @@ public class DynastiesMod
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
+
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);
@@ -47,7 +45,7 @@ public class DynastiesMod
         ModSensorTypes.SENSOR_TYPES.register(modEventBus);
         ModMemoryTypes.MEMORY_TYPES.register(modEventBus);
 
-        // Custom Registries
+        ModMealTypes.register(modEventBus);
         ModBuildings.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
@@ -70,10 +68,12 @@ public class DynastiesMod
         Config.items.forEach((item) -> LOGGER.info("ITEM >> {}", item.toString()));
 
         event.enqueueWork(PacketHandler::register);
+        event.enqueueWork(ModMealTypes::initializeMealTypes);
     }
 
     private void clientSetup(final FMLClientSetupEvent event)
     {
+        ItemBlockRenderTypes.setRenderLayer(ModBlocks.CAMPFIRE_POT.get(), RenderType.cutout());
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

@@ -47,7 +47,7 @@ public class DynastiesVillagerRenderer extends MobRenderer<DynastiesVillager, Dy
 
 
         // TODO: TEMPORARY NOBILITY FLAG
-        renderState.isNobility = villager.isNobility;
+        renderState.isNobility = villager.isNobility();
         renderState.hasItem = !villager.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() || !villager.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
 
         if (villager.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BlockItem blockItem) {

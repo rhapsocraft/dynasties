@@ -48,6 +48,8 @@ public class FarmlandsSensor<E extends AbstractDynastyVillager> extends Extended
                 farmlands.sort(Comparator.comparingDouble(farmland -> entity.distanceToSqr(farmland.getCenter())));
                 BrainUtil.setMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get(), farmlands);
             }
+        } else {
+            BrainUtil.clearMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get());
         }
     }
 
@@ -58,7 +60,7 @@ public class FarmlandsSensor<E extends AbstractDynastyVillager> extends Extended
 
     @Override
     public SensorType<? extends ExtendedSensor<?>> type() {
-        return ModSensorTypes.FARMLANDS.get();
+        return ModSensorTypes.HOME_FARMLANDS.get();
     }
 
     static {

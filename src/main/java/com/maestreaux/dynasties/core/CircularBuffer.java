@@ -11,12 +11,20 @@ public class CircularBuffer<T> {
     private int size;  // The current number of elements in the buffer
     private final int capacity;  // The fixed capacity of the buffer
 
+    // TODO: Save and Load
     public CircularBuffer(int capacity) {
         this.capacity = capacity;
         this.buffer = new ArrayList<>(capacity);
         this.head = 0;
         this.tail = 0;
         this.size = 0;
+    }
+
+    // Load
+    public CircularBuffer(int capacity, List<T> contents) {
+        this(capacity);
+
+        this.buffer.addAll(contents);
     }
 
     public void add(T element) {
@@ -43,6 +51,10 @@ public class CircularBuffer<T> {
         tail = (tail + 1) % capacity;
         size--;
         return element;
+    }
+
+    public List<T> getContents() {
+        return this.buffer;
     }
 
     public int size() {

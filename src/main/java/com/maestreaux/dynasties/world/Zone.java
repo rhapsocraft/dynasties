@@ -2,6 +2,7 @@ package com.maestreaux.dynasties.world;
 
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CAddZone;
+import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -21,9 +22,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Zone {
     public static StreamCodec<RegistryFriendlyByteBuf, Zone> STREAM_CODEC;
@@ -31,6 +30,7 @@ public class Zone {
     private BlockPos center;
     private AABB boundingBox;
     private List<Plot> plots = new ArrayList<>();
+    private final Set<AbstractDynastyVillager> residents = new HashSet<>();
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final Level level;
@@ -97,6 +97,7 @@ public class Zone {
             this.boundingBox = new AABB(Vec3.atLowerCornerOf(startPos), Vec3.atLowerCornerOf(endPos));
     }
 
+
     public Level level() {
         return this.level;
     }
@@ -127,6 +128,13 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
+    public void addResident(AbstractDynastyVillager villager) {
+        this.residents.add(villager);
+    }
+
+    public Set<AbstractDynastyVillager> getResidents() {
+        return this.residents;
+    }
 
     public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type) {
         var newPlot = new Plot(startPos, endPos, type);
@@ -144,7 +152,16 @@ public class Zone {
     public void addPlot(Plot plot) {
         // Client-side method. No need to encode other params at the moment
         plot.setParentZone(this);
-        this.plots.add(plot);
+
+        // Replace plot if existing
+        var existingPlot = this.plots.stream().filter(zonePlot -> zonePlot.uuid.equals(plot.uuid)).findFirst().orElse(null);
+
+        if (existingPlot != null) {
+            this.plots.replaceAll((zonePlot) -> zonePlot.uuid.equals(plot.uuid) ? plot : zonePlot);
+        } else {
+            this.plots.add(plot);
+        }
+
     }
 
     public Plot getPlotByUUID(UUID plotUUID) {

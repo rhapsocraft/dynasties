@@ -51,8 +51,12 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
                                 var item = itemStackToReturn.getItem();
 
                                 while (itemStackToReturn != ItemStack.EMPTY && currentSlot <= (currentInventory.getSlots() - 1)) {
-                                    itemStackToReturn = currentInventory.insertItem(currentSlot++, itemStackToReturn, false);
+                                    itemStackToReturn = currentInventory.insertItem(currentSlot, itemStackToReturn, false);
                                     inventory.setItem(currentItemSlot, itemStackToReturn);
+
+                                    if (itemStackToReturn != ItemStack.EMPTY) {
+                                        ++currentSlot;
+                                    }
                                 }
 
                                 if (inventory == entityTradeInv) {

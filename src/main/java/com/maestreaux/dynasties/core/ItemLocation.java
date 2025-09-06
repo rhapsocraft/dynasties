@@ -22,4 +22,8 @@ public class ItemLocation {
     public ItemLocation(ItemStack stack, BlockEntity blockEntity, int slot) {
         this(stack, blockEntity, new ItemStackHandler(), slot);
     }
+
+    public ItemStack getStack() {
+        return this.stack;
+    }
 }

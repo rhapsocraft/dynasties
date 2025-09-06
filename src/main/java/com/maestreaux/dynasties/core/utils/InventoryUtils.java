@@ -1,7 +1,14 @@
 package com.maestreaux.dynasties.core.utils;
 
 import com.maestreaux.dynasties.core.ItemLocation;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraftforge.items.IItemHandler;
 
@@ -10,6 +17,39 @@ import java.util.*;
 import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
 
 public class InventoryUtils {
+    public static Comparator<ItemStack> nutritionSorter = (o1, o2) -> getNutrition(o2) - getNutrition(o1);
+
+    public static Comparator<ItemStack> getPotentialNutritionSorter(ServerLevel level) {
+        return (o1, o2) -> getPotentialNutrition(level, o2) - getPotentialNutrition(level, o1);
+    }
+
+    public static Comparator<ItemLocation> itemLocationNutritionSorter = (o1, o2) -> nutritionSorter.compare(o1.stack, o2.stack);
+    public static Comparator<ItemLocation> itemLocationPotentialNutritionSorter(ServerLevel level) {
+        return (o1, o2) -> getPotentialNutritionSorter(level).compare(o1.stack, o2.stack);
+    }
+
+    public static int getNutrition(ItemStack item) {
+        var foodProperties = item.get(DataComponents.FOOD);
+
+        if (foodProperties != null) {
+            return foodProperties.nutrition();
+        }
+
+        return 0;
+    }
+
+    public static int getPotentialNutrition(ServerLevel level, ItemStack item) {
+        var recipeInput = new SingleRecipeInput(item);
+        var potentialItemRecipe = level.recipeAccess().getRecipeFor(RecipeType.CAMPFIRE_COOKING, recipeInput, level);
+
+        if (potentialItemRecipe.isPresent()) {
+            var recipeItem = potentialItemRecipe.get().value().assemble(recipeInput, level.registryAccess());
+            return getNutrition(recipeItem);
+        } else {
+            return 0;
+        }
+    }
+
     public static IItemHandler getItemHandler(BaseContainerBlockEntity container) {
         return container.getCapability(ITEM_HANDLER).resolve().orElse(null);
     }

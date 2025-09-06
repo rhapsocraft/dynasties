@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.core;
 
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
+import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 public class MarketAgent {
     public static Map<Item, Float> MARKETABLE_ITEMS = Map.of(
+            ModItems.COIN.get(), 1F,
             Items.POTATO, 1F,
             Items.CARROT, 1F,
             Items.WHEAT, 1F,
@@ -32,8 +34,8 @@ public class MarketAgent {
     private final Map<Item, Float> valuations = new HashMap<>();
     private final Map<Item, TradeOffer> activeOffers = new HashMap<>();
     private final AbstractDynastyVillager entity;
-    private int money = 200;
-    private float foodBudget = 0.5F;
+    private int money = 250;
+    private float foodBudget = 0.75F;
     public long valuationsLastUpdated = 0;
 
     public MarketAgent(AbstractDynastyVillager villager) {

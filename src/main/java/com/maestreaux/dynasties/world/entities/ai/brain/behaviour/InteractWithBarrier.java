@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 
+import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -18,6 +19,10 @@ import java.util.Set;
 
 // TODO: Enable opening of fence blocks by creating new custom navigation for villager
 public class InteractWithBarrier<E extends LivingEntity> extends InteractWithDoor<E> {
+    public InteractWithBarrier() {
+        this.holdDoorsOpenFor = (entity, other, doorPos) -> other instanceof AbstractDynastyVillager && doorPos.closerToCenterThan(other.position(), (double)2.0F);
+    }
+
     @Override
     protected void checkAndCloseDoors(ServerLevel level, E entity, Set<GlobalPos> doorsToClose, BlockPos prevNodePos, BlockPos nextNodePos) {
         Iterator<GlobalPos> iterator = doorsToClose.iterator();
@@ -70,8 +75,9 @@ public class InteractWithBarrier<E extends LivingEntity> extends InteractWithDoo
         if (blockState.getBlock() instanceof DoorBlock door) {
             if (!door.isOpen(blockState)) {
                 door.setOpen(entity, level, blockState, pos, true);
-                this.addDoorsToClose(level, entity, pos);
             }
+
+            this.addDoorsToClose(level, entity, pos);
         } /* else if (blockState.getBlock() instanceof FenceGateBlock fenceGate){
             var isOpen = blockState.getValue(FenceGateBlock.OPEN);
 

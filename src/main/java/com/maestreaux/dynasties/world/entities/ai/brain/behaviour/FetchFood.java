@@ -23,7 +23,7 @@ public class FetchFood<E extends AbstractDynastyVillager> extends ExtendedBehavi
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        return !entity.getInventory().hasAnyOf(Dictionaries.FOOD) && entity.getHunger() < entity.getMaxHunger();
+        return !entity.getInventory().hasAnyOf(Dictionaries.FOOD) && entity.getHunger() < (entity.getMaxHunger() - 3000);
     }
 
     @Override
@@ -35,8 +35,7 @@ public class FetchFood<E extends AbstractDynastyVillager> extends ExtendedBehavi
                 var targetPos = this.targetFood.blockEntity.getBlockPos();
 
                 if (AIUtils.isCloseEnoughToTarget(entity, targetPos)) {
-                    var extractFood = this.targetFood.itemHandler.extractItem(this.targetFood.slot, 64, false);
-
+                    var extractFood = this.targetFood.itemHandler.extractItem(this.targetFood.slot, 1, false);
 
                     entity.getInventory().addItem(extractFood);
                     this.targetFood = null;

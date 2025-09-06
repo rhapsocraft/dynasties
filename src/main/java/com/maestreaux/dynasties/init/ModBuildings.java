@@ -18,6 +18,7 @@ public class ModBuildings {
     public static final RegistryObject<Building> MEDIUM_GARDEN = BUILDINGS.register("medium_garden", () -> new Building("medium_garden", "structures/medium_garden.nbt"));
     public static final RegistryObject<Building> LONG_GARDEN = BUILDINGS.register("long_garden", () -> new Building("long_garden", "structures/long_garden.nbt"));
     public static final RegistryObject<Building> NARROW_GARDEN = BUILDINGS.register("narrow_garden", () -> new Building("narrow_garden", "structures/narrow_garden.nbt"));
+    public static final RegistryObject<Building> MEDIUM_RANCH = BUILDINGS.register("medium_ranch", () -> new Building("medium_ranch", "structures/medium_ranch.nbt"));
 
     public static void register(IEventBus bus) {
         BUILDINGS_REGISTRY = BUILDINGS.makeRegistry(() -> RegistryBuilder.of(ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, "building")));

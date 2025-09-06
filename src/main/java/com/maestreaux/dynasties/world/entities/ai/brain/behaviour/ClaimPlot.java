@@ -19,9 +19,8 @@ public class ClaimPlot<E extends AbstractDynastyVillager> extends ExtendedBehavi
         var availablePlots = BrainUtil.getMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get());
 
         if (availablePlots != null) {
-            availablePlots.stream().filter(plot -> plot.getType() == Plot.PlotType.RESIDENTIAL).findFirst().ifPresent(entity::occupyPlot);
+            availablePlots.stream().filter(plot -> (plot.getType() == Plot.PlotType.RESIDENTIAL || plot.getType() == Plot.PlotType.RANCH || plot.getType() == Plot.PlotType.HALL) && plot.isEnabled()).findFirst().ifPresent(entity::occupySlot);
         }
-
     }
 
     @Override

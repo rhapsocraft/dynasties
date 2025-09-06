@@ -1,10 +1,13 @@
 package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.core.utils.PlotUtils;
 import com.maestreaux.dynasties.init.ModBuildings;
 import com.maestreaux.dynasties.init.ModItems;
 import com.maestreaux.dynasties.network.PacketHandler;
+import com.maestreaux.dynasties.network.message.CAddPlot;
 import com.maestreaux.dynasties.network.message.CZonesList;
+import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import net.minecraft.server.level.ServerLevel;
@@ -22,6 +25,7 @@ public class GeneralModEvents {
         var packet = new CZonesList(Zone.getZones(level));
         PacketHandler.sendToPlayer(packet, player);
     }
+
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         var level = event.getEntity().level();
@@ -44,7 +48,7 @@ public class GeneralModEvents {
     public static void onServerStarted(ServerStartedEvent event) {
         var house = ModBuildings.BUILDINGS;
 
-        for ( var houseEntry : house.getEntries()) {
+        for (var houseEntry : house.getEntries()) {
             houseEntry.get().loadTemplate(event.getServer());
         }
     }
@@ -53,25 +57,74 @@ public class GeneralModEvents {
     public static void onItemUse(PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide()) {
             var serverLevel = (ServerLevel) event.getLevel();
+            var hitPos = event.getHitVec().getBlockPos();
 
             if (event.getItemStack().is(ModItems.DEBUG_TOOL.get())) {
-                var hitPos = event.getHitVec().getBlockPos();
                 var level = event.getLevel();
-                var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ?  hitPos.above() : hitPos;
+                var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ? hitPos.above() : hitPos;
 
                 var newZone = new Zone(serverLevel, position);
 
                 Zone.add(serverLevel, newZone);
 
-                for(int i = 0; i < 6; i++) {
+                for (int i = 0; i < 8; i++) {
                     var newVillager = new DynastiesVillager(serverLevel, newZone);
                     serverLevel.addFreshEntity(newVillager);
                     newVillager.moveTo(newZone.getCenter().above().getCenter());
                 }
 
+                var nobilityVillager = new DynastiesVillager(serverLevel, newZone);
+                nobilityVillager.setIsNobility(true);
+                serverLevel.addFreshEntity(nobilityVillager);
+                nobilityVillager.moveTo(newZone.getCenter().above().getCenter());
+
+            } else if (event.getItemStack().is(ModItems.DEBUG_TOOL_PLOT_CONVERTER.get())) {
+                var parentZone = Zone.getContainerZone(serverLevel, hitPos);
+                var selectedPlot = parentZone.getPlots().stream().filter(plot -> PlotUtils.contains(plot.getAbsoluteStartPos(), plot.getAbsoluteEndPos(), hitPos)).findFirst().orElse(null);
+                var player = event.getEntity();
+
+                if (selectedPlot != null) {
+                    if (player.isShiftKeyDown()) {
+                        selectedPlot.enable();
+
+                        selectedPlot.clearSlots();
+
+                        if (selectedPlot.getType() == Plot.PlotType.RESIDENTIAL) {
+                            selectedPlot.addSlot(Plot.Job.TRADER);
+                            selectedPlot.addSlot(Plot.Job.WORKER);
+                        } else if (selectedPlot.getType() == Plot.PlotType.RANCH) {
+                            selectedPlot.addSlot(Plot.Job.TRADER);
+                            selectedPlot.addSlot(Plot.Job.RANCHER);
+                        } else if (selectedPlot.getType() == Plot.PlotType.HALL) {
+                            selectedPlot.addSlot(Plot.Job.NOBLE);
+                            selectedPlot.addSlot(Plot.Job.WORKER);
+                            selectedPlot.addSlot(Plot.Job.TRADER);
+                        } else if (selectedPlot.getType() == Plot.PlotType.MARKET) {
+                            selectedPlot.addSlot(Plot.Job.TRADER);
+                        }
+                    } else {
+                        var newType = switch (selectedPlot.getType()) {
+                            case RESERVED -> Plot.PlotType.RESIDENTIAL;
+                            case RESIDENTIAL -> Plot.PlotType.RANCH;
+                            case RANCH -> Plot.PlotType.HALL;
+                            case HALL -> Plot.PlotType.MARKET;
+                            default -> Plot.PlotType.RESERVED;
+                        };
+
+                        selectedPlot.setType(newType);
+                        selectedPlot.clearPartitions();
+                        PlotUtils.debugSetPartitions(selectedPlot);
+
+                        var addPlotPacket = new CAddPlot(parentZone, selectedPlot);
+                        PacketHandler.sendToAll(addPlotPacket);
+                    }
+
+                    parentZone.save((ServerLevel) player.level());
+                }
             } else if (event.getItemStack().is(Items.STICK)) {
                 Zone.getZones(serverLevel);
             }
         }
     }
 }
+

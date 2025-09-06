@@ -59,10 +59,7 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
     private static final List<Item> DESIRED_ITEMS;
-    private final int tickOffset =  Mth.ceil(Math.random() * 20);
-
-    // TODO: TEMPORARY NOBILITY FLAG
-    public boolean isNobility = false;
+    private final int tickOffset = Mth.ceil(Math.random() * 20);
 
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState fleeAnimationState = new AnimationState();
@@ -107,7 +104,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     public void tick() {
         this.updateSwingTime();
 
-        if(level().isClientSide()) {
+        if (level().isClientSide()) {
             this.idleAnimationState.animateWhen(!this.walkAnimation.isMoving(), this.tickCount);
             this.fleeAnimationState.animateWhen(this.isFleeing(), this.tickCount);
             this.eatAnimationState.animateWhen(this.isEating(), this.tickCount);
@@ -142,7 +139,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     }
 
     private void setPosToBed(BlockPos blockPos, boolean isTent, Direction direction) {
-        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ?  0.6875D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
+        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ? 0.6875D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
 
         this.setPos(blockPos.getX() + offset.x, blockPos.getY(), blockPos.getZ() + offset.z);
     }
@@ -171,8 +168,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 
     @Override
     public @NotNull InteractionResult mobInteract(Player player, @NotNull InteractionHand interactionHand) {
-        if(interactionHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
-        if(!this.level().isClientSide()) return InteractionResult.SUCCESS;
+        if (interactionHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        if (!this.level().isClientSide()) return InteractionResult.SUCCESS;
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientHooks.openMerchantScreen(this));
         return InteractionResult.SUCCESS;
@@ -198,7 +195,10 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new NearbyItemsSensor<>(),
                 new NearbyPlayersSensor<>(),
                 new AvailableTentsSensor<>(),
-                new AvailableFoodSensor<>()
+                new AvailableFoodSensor<>(),
+                new LivestockSensor<>(),
+                new HomeCampfiresSensor<>(),
+                new IngredientsSensor<>()
         );
     }
 
@@ -206,9 +206,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.idleTasks(
                 //new GoHome<>(),
                 new TargetOrRetaliate<>(),
-                new FetchFood<>(),
-                new FirstApplicableBehaviour<>(new EatFood<>(), new PickUpItems<>(), new ReturnItems<>())
-
+                new FirstApplicableBehaviour<>(new CollectTaxes<>().startCondition(AbstractDynastyVillager::isNobility), new EatFood<>(), new FetchFood<>(), new PickUpItems<>(), new ReturnItems<>())
         );
     }
 
@@ -220,7 +218,27 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new InteractWithBarrier<>(),
                 new MoveToWalkTarget<>(),
                 new ClaimPlot<>(),
-                new DoConstruction<>()
+                new DoConstruction<>().startCondition((villager) -> !villager.isNobility()),
+                new FirstApplicableBehaviour<>(new ReturnItems<>(), new GoHome<>()).startCondition(AbstractDynastyVillager::isNobility)
+        );
+    }
+
+    private BrainActivityGroup<DynastiesVillager> getMeetTasks() {
+        return new BrainActivityGroup<DynastiesVillager>(Activity.MEET).priority(11).behaviours(
+                new FirstApplicableBehaviour<>(
+                        new AllApplicableBehaviours<>(
+                                new GoToMarket<>(),
+                                new StockWares<>()
+                        ).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER),
+                        new AllApplicableBehaviours<>(
+                                new FetchSeeds<>(),
+                                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
+                                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
+                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+                        new AllApplicableBehaviours<>(
+                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
+                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
+                )
         );
     }
 
@@ -228,14 +246,14 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(11).behaviours(
                 new FirstApplicableBehaviour<>(
                         new AllApplicableBehaviours<>(
-                                new GoHome<>(),
-                                new StockWares<>()
-                        ).startCondition((villager) -> villager.getJob() == Plot.SlotJob.TRADER),
-                        new AllApplicableBehaviours<>(
                                 new FetchSeeds<>(),
                                 new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
                                 new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
-                        ).startCondition((villager) -> villager.getJob() == Plot.SlotJob.WORKER)
+                        ).startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+                        new FirstApplicableBehaviour<>(new CookFood<>(), new PickUpItems<>(), new ReturnItems<>(), new FetchIngredients<>()).startCondition(villager -> villager.getJob() == Plot.Job.TRADER),
+                        new AllApplicableBehaviours<>(
+                                new FirstApplicableBehaviour<>(new BreedLivestock<>(), new SlaughterLivestock<>(), new PickUpItems<>(), new ReturnItems<>())
+                        ).startCondition((villager) -> villager.getJob() == Plot.Job.RANCHER)
                 )
         );
     }
@@ -243,9 +261,9 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     private BrainActivityGroup<DynastiesVillager> getRestTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.REST).priority(1).behaviours(
                 new SleepInTent<>(),
-                //new GoHome<>(),
-                new ReturnItems<>().startCondition((villager) -> villager.getJob() == Plot.SlotJob.WORKER),
-                new FirstApplicableBehaviour<>(new ReturnItems<>(), new AdjustValuationsAndPrices<>()).startCondition((villager) -> villager.getJob() == Plot.SlotJob.TRADER)
+                new GoHome<>(),
+                new ReturnItems<>().startCondition((villager) -> villager.getJob() == Plot.Job.WORKER),
+                new FirstApplicableBehaviour<>(new ReturnItems<>(), new AdjustValuationsAndPrices<>()).startCondition((villager) -> villager.getJob() == Plot.Job.TRADER)
         );
     }
 
@@ -257,6 +275,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     @Override
     public Map<Activity, BrainActivityGroup<? extends DynastiesVillager>> getAdditionalTasks() {
         return Map.of(
+                Activity.MEET, getMeetTasks(),
                 Activity.WORK, getWorkTasks(),
                 Activity.REST, getRestTasks()
         );
@@ -264,7 +283,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 
     @Override
     public SmartBrainSchedule getSchedule() {
-        return new BasicSchedule().activityAt(1000, Activity.IDLE).activityAt(2500, Activity.WORK).activityAt(12000, Activity.REST);
+        return new BasicSchedule().activityAt(1000, Activity.IDLE).activityAt(2500, Activity.MEET).activityAt(6000, Activity.WORK).activityAt(12000, Activity.REST);
     }
 
 //    @Override
@@ -275,6 +294,17 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 //    }
 
     static {
-        DESIRED_ITEMS = List.of(Items.WHEAT, Items.BEETROOT);
+        DESIRED_ITEMS = List.of(
+                Items.WHEAT,
+                Items.BEETROOT,
+                Items.BEEF,
+                Items.COOKED_BEEF,
+                Items.PORKCHOP,
+                Items.COOKED_PORKCHOP,
+                Items.CHICKEN,
+                Items.COOKED_CHICKEN,
+                Items.LEATHER,
+                Items.BAKED_POTATO
+        );
     }
 }

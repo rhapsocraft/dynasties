@@ -5,6 +5,7 @@ import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -18,6 +19,7 @@ import java.util.List;
 public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour<E> {
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
     private ItemStack foodItem;
+    private int consumedItemNutrition = 0;
 
     public EatFood() {
         super(32);
@@ -27,7 +29,8 @@ public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour
     protected void doDelayedAction(E entity) {
         if (this.foodItem != null) {
             // foodItem.shrink(1);
-            entity.setHunger(entity.getHunger() + 1000);
+            entity.setHunger(entity.getHunger() + (1000 * this.consumedItemNutrition));
+            entity.eatFood(this.foodItem.getItem());
         }
 
         entity.setIsEating(false);
@@ -37,12 +40,19 @@ public class EatFood<E extends AbstractDynastyVillager> extends DelayedBehaviour
     protected void start(E entity) {
         // TODO: sorted by preference
         this.foodItem = entity.getInventory().getItems().stream().filter(item -> Dictionaries.FOOD.contains(item.getItem())).findFirst().orElse(null);
+        this.consumedItemNutrition = 0;
 
         if (this.foodItem != null) {
-            Consumable consumable = this.foodItem.get(DataComponents.CONSUMABLE);
+            var consumable = this.foodItem.get(DataComponents.CONSUMABLE);
+            var foodComponent = this.foodItem.get(DataComponents.FOOD);
 
             if (consumable != null) {
                 entity.setItemInHand(InteractionHand.MAIN_HAND, this.foodItem);
+
+                if (foodComponent != null) {
+                    this.consumedItemNutrition = foodComponent.nutrition();
+                }
+
                 consumable.startConsuming(entity, this.foodItem, InteractionHand.MAIN_HAND);
                 entity.setIsEating(true);
             }

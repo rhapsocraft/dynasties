@@ -34,26 +34,46 @@ public class DebugPlottingToolItem extends Item {
             var player = pContext.getPlayer();
 
             if (parentZone != null) {
-                if (player != null && pContext.getPlayer().isShiftKeyDown()) {
-                    // parentZone.clearPlots();
-                    return InteractionResult.SUCCESS_SERVER;
-                }
-
                 if (this.currentPlotStartPos == null) {
                     this.currentPlotStartPos = pContext.getClickedPos();
+//                    Plot overlappingPlot = parentZone.getPlots().stream().filter((plot) -> PlotUtils.contains(plot.getAbsoluteStartPos(), plot.getAbsoluteEndPos(), clickedPos)).findFirst().orElse(null);
+//
+//                    if (overlappingPlot != null) {
+//                        var newType = switch (overlappingPlot.getType()) {
+//                            case RESERVED -> Plot.PlotType.RESIDENTIAL;
+//                            case RESIDENTIAL -> Plot.PlotType.SQUARE;
+//                            default -> Plot.PlotType.RESERVED;
+//                        };
+//
+//                        if (player != null && player.isShiftKeyDown()) {
+//                            newType = Plot.PlotType.SQUARE;
+//                        }
+//
+//                        overlappingPlot.setType(newType);
+//                        overlappingPlot.clearPartitions();
+//
+//                        if (overlappingPlot.getType() == Plot.PlotType.RESIDENTIAL) {
+//                            overlappingPlot.addSlot(Plot.SlotJob.TRADER);
+//                            overlappingPlot.addSlot(Plot.SlotJob.WORKER);
+//                        } else if (overlappingPlot.getType() == Plot.PlotType.SQUARE) {
+//                            overlappingPlot.addSlot(Plot.SlotJob.WORKER);
+//                            overlappingPlot.addSlot(Plot.SlotJob.WORKER);
+//                            overlappingPlot.addSlot(Plot.SlotJob.NOBLE);
+//                        }
+//
+//                        PlotUtils.debugSetPartitions(overlappingPlot);
+//
+//                        var zonesList = new CZonesList(Zone.getZones());
+//                        PacketHandler.sendToAll(zonesList);
+//                    }
                 } else {
                     var newPos = pContext.getClickedPos();
-                    var newPosZone =  Zone.getContainerZone(serverLevel, newPos);
+                    var newPosZone = Zone.getContainerZone(serverLevel, newPos);
 
                     if (newPosZone != null && !this.currentPlotStartPos.equals(newPos) && PlotUtils.isValidPlot(currentPlotStartPos, newPos, parentZone)) {
                         var endPosOffset = newPos.offset(-parentZone.getCenter().getX(), -this.currentPlotStartPos.getY() - 1, -parentZone.getCenter().getZ());
                         var startPosOffset = this.currentPlotStartPos.subtract(parentZone.getCenter());
-                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESIDENTIAL);
-
-                        newPlot.addSlot(Plot.SlotJob.TRADER);
-                        newPlot.addSlot(Plot.SlotJob.WORKER);
-
-                        PlotUtils.debugSetPartitions(newPlot);
+                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESERVED);
 
                         var addPlotPacket = new CAddPlot(parentZone, newPlot);
                         PacketHandler.sendToAll(addPlotPacket);

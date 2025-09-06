@@ -20,7 +20,18 @@ public class Dictionaries {
 
     public static Set<Item> FOOD = new HashSet<>(List.of(
             Items.POTATO,
-            Items.CARROT
+            Items.CARROT,
+            Items.BAKED_POTATO,
+            Items.COOKED_BEEF,
+            Items.COOKED_PORKCHOP,
+            Items.COOKED_CHICKEN
+    ));
+
+    public static Set<Item> INGREDIENTS = new HashSet<>(List.of(
+            Items.POTATO,
+            Items.BEEF,
+            Items.PORKCHOP,
+            Items.CHICKEN
     ));
 }
 

@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "villagerdynasties:item/packed_goods",
+    "property": "minecraft:display_context"
+  }
+}

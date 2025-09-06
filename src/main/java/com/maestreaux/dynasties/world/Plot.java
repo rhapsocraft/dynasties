@@ -1,25 +1,26 @@
 package com.maestreaux.dynasties.world;
 
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
+import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Predicate;
 
 public class Plot {
     public static StreamCodec<RegistryFriendlyByteBuf, Plot> STREAM_CODEC;
-
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final BlockPos startPos;
@@ -27,8 +28,13 @@ public class Plot {
     private Zone parentZone;
     private final List<Slot> slots = new ArrayList<>();
     private final List<Partition> partitions = new ArrayList<>();
-    private final PlotType type;
+    private PlotType type;
 
+    public Map<JobType, JobTicket> jobMap = Map.of(JobType.COOK_FOOD, new JobTicket("cook_food"));
+    // TODO: Per household instead of per plot
+    private long lastTaxed = -1;
+
+    private boolean isEnabled = false;
 
     public Plot(BlockPos startPos, BlockPos endPos, PlotType type) {
         var corner1 = new BlockPos(startPos.getX(), startPos.getY(), endPos.getZ());
@@ -43,13 +49,16 @@ public class Plot {
     }
 
     public Plot(BlockPos startPos, BlockPos endPos) {
-        this(startPos, endPos, (PlotType) null);
+        this(startPos, endPos, null);
     }
 
-    public Plot(BlockPos startPos, BlockPos endPos, List<Partition> partitions) {
+    public Plot(UUID uuid, BlockPos startPos, BlockPos endPos, String type, List<Partition> partitions) {
+        // CLIENT-SIDE
         this(startPos, endPos);
-
         partitions.forEach(this::addPartition);
+
+        this.type = PlotType.valueOf(type);
+        this.uuid = uuid;
     }
 
     private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
@@ -64,8 +73,12 @@ public class Plot {
         slots.add(new Slot(this));
     }
 
-    public void addSlot(SlotJob job) {
+    public void addSlot(Job job) {
         slots.add(new Slot(this, job));
+    }
+
+    public void clearSlots() {
+        this.slots.clear();
     }
 
     public BlockPos getStartPos() {
@@ -80,7 +93,13 @@ public class Plot {
         return this.endPos;
     }
 
-    public PlotType getType() { return this.type; }
+    public PlotType getType() {
+        return this.type;
+    }
+
+    public String getTypeName() {
+        return this.type.name();
+    }
 
     public BlockPos getAbsoluteEndPos() {
         return this.endPos.offset(this.parentZone.getCenter());
@@ -94,12 +113,36 @@ public class Plot {
         return this.parentZone;
     }
 
+    public boolean isEnabled() {
+        return this.isEnabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.isEnabled = enabled;
+    }
+
+    public void enable() {
+        this.setEnabled(true);
+    }
+
+    public void disable() {
+        this.setEnabled(false);
+    }
+
     public UUID getUUID() {
         return this.uuid;
     }
 
+    public Slot getSlot(UUID uuid) {
+        return this.slots.stream().filter(slot -> slot.uuid.equals(uuid)).findFirst().orElse(null);
+    }
+
     public List<Slot> getSlots() {
         return this.slots;
+    }
+
+    public List<Slot> getOccupiedSlots() {
+        return this.slots.stream().filter(slot -> slot.occupiedBy != null).toList();
     }
 
     public void clearVillagerFromPlot(AbstractDynastyVillager villager) {
@@ -110,9 +153,14 @@ public class Plot {
         }
     }
 
+    public void setType(PlotType newType) {
+        this.type = newType;
+    }
+
     public Slot getSlotByVillager(AbstractDynastyVillager villager) {
         return this.slots.stream().filter(slot -> slot.occupiedBy == villager).findFirst().orElse(null);
     }
+
 
     // TODO: Temporary
     public Partition getPartitionToBuildOn() {
@@ -132,12 +180,20 @@ public class Plot {
         this.partitions.add(newPartition);
     }
 
+    public void clearPartitions() {
+        this.partitions.clear();
+    }
+
     public List<Partition> getPartitions() {
         return this.partitions;
     }
 
     public Slot getAvailableSlot() {
-        return this.slots.stream().filter(slot -> slot.occupiedBy == null).findFirst().orElse(null);
+        return this.slots.stream().filter(slot -> slot.occupiedBy == null && slot.job != Job.NOBLE).findFirst().orElse(null);
+    }
+
+    public Slot getAvailableSlot(Job desiredJob) {
+        return this.slots.stream().filter(slot -> slot.occupiedBy == null && slot.job == desiredJob).findFirst().orElse(null);
     }
 
     public boolean isPlotFull() {
@@ -147,32 +203,44 @@ public class Plot {
     public void save(CompoundTag tag) {
         var slotsListTag = new ListTag();
         var partitionsListTag = new ListTag();
+        var jobsListTag = new ListTag();
 
-        for(var slot: this.slots) {
+        for (var slot : this.slots) {
             var slotTag = new CompoundTag();
             slot.save(slotTag);
 
             slotsListTag.add(slotTag);
         }
 
-        for(var partition: this.partitions) {
+        for (var job: this.jobMap.values()) {
+            var jobFulfilledTimeTag = new CompoundTag();
+
+            jobFulfilledTimeTag.putLong("villagerdynasties:job_time_fulfilled", job.fulfilledDayTime);
+        }
+
+        for (var partition : this.partitions) {
             var partitionTag = new CompoundTag();
             partition.save(partitionTag);
 
             partitionsListTag.add(partitionTag);
         }
 
+        tag.put("villagerdynasties:jobs", jobsListTag);
         tag.put("villagerdynasties:slots", slotsListTag);
         tag.put("villagerdynasties:partitions", partitionsListTag);
         tag.putUUID("villagerdynasties:plot_uuid", this.uuid);
+        tag.putString("villagerdynasties:plot_type", this.type.toString());
+        tag.putBoolean("villagerdynasties:plot_enabled", this.isEnabled);
+        tag.putLong("villagerdynasties:last_taxed", this.lastTaxed);
     }
 
     public void load(CompoundTag tag) {
         var slotsListTag = (ListTag) tag.get("villagerdynasties:slots");
         var partitionsListTag = (ListTag) tag.get("villagerdynasties:partitions");
+        var jobsListTag = (ListTag) tag.get("villagerdynasties:jobs");
 
         if (slotsListTag != null) {
-            for(int i = 0; i < slotsListTag.size(); i++) {
+            for (int i = 0; i < slotsListTag.size(); i++) {
                 var newSlot = new Slot(this);
                 newSlot.load(slotsListTag.getCompound(i));
 
@@ -181,7 +249,7 @@ public class Plot {
         }
 
         if (partitionsListTag != null) {
-            for(int i = 0; i < partitionsListTag.size(); i++) {
+            for (int i = 0; i < partitionsListTag.size(); i++) {
                 var newPartition = new Partition();
                 newPartition.load(partitionsListTag.getCompound(i));
 
@@ -189,10 +257,31 @@ public class Plot {
             }
         }
 
+        if (jobsListTag != null) {
+            var jobArr = this.jobMap.values().toArray(new JobTicket[0]);
+
+            for (int i = 0; i < jobsListTag.size(); i++) {
+                var jobTag = jobsListTag.getCompound(i);
+                jobArr[i].fulfilledDayTime = tag.getLong("villagerdynasties:job_time_fulfilled");
+            }
+        }
 
         if (tag.hasUUID("villagerdynasties:plot_uuid")) {
             this.uuid = tag.getUUID("villagerdynasties:plot_uuid");
         }
+
+        this.type = PlotType.valueOf(tag.getString("villagerdynasties:plot_type"));
+        this.isEnabled = tag.getBoolean("villagerdynasties:plot_enabled");
+        this.lastTaxed = tag.getLong("villagerdynasties:last_taxed");
+    }
+
+    public long getLastTaxed() {
+        return lastTaxed;
+    }
+
+    public void setLastTaxed(long lastTaxed) {
+        this.lastTaxed = lastTaxed;
+        this.getParentZone();
     }
 
     public static class PlotRecipe {
@@ -203,23 +292,62 @@ public class Plot {
         }
     }
 
-    public enum SlotJob {
+    public enum Job {
         TRADER,
-        WORKER
+        WORKER,
+        RANCHER,
+        NOBLE
+    }
+
+    public enum JobType {
+        COOK_FOOD
+    }
+
+    public static class JobTicket {
+        private String id;
+        private AbstractDynastyVillager claimedBy;
+        private long fulfilledDayTime = -1;
+
+        public JobTicket(String id) {
+            this.id = id;
+        }
+
+        public boolean isFulfilledForToday(long gameTime) {
+            return gameTime % 24_000 < this.fulfilledDayTime;
+        }
+
+        public void fulfill(long gameTime) {
+            this.claimedBy = null;
+            this.fulfilledDayTime = gameTime % 24_000;
+        }
+
+        public boolean isClaimed() {
+            return this.claimedBy != null;
+        }
+
+        public AbstractDynastyVillager getClaimant() {
+            return this.claimedBy;
+        }
+
+        public void claim(AbstractDynastyVillager claimant) {
+            this.claimedBy = claimant;
+        }
     }
 
     public static class Slot {
-        private final Plot parentPlot;
-        private AbstractDynastyVillager occupiedBy = null;
-        private SlotJob job;
+        protected final RandomSource random = RandomSource.create();
+        protected  UUID uuid;
+        protected final Plot parentPlot;
+        protected AbstractDynastyVillager occupiedBy = null;
+        protected Job job;
 
         public Slot(Plot parent) {
-            this.parentPlot = parent;
-            this.job = null;
+            this(parent, null);
         }
 
-        public Slot(Plot parent, SlotJob job) {
+        public Slot(Plot parent, Job job) {
             this.parentPlot = parent;
+            this.uuid = Mth.createInsecureUUID(this.random);
             this.job = job;
         }
 
@@ -229,13 +357,21 @@ public class Plot {
             }
         }
 
+        public AbstractDynastyVillager getOccupier() {
+            return this.occupiedBy;
+        }
+
         public void setOccupier(AbstractDynastyVillager villager) {
             this.occupiedBy = villager;
         }
 
-        public SlotJob getJob() {
+        public Job getJob() {
             return this.job;
         }
+
+        public Plot getParentPlot() { return this.parentPlot; }
+
+        public UUID getUUID() {return this.uuid; }
 
         public boolean isOccupiedBy(AbstractDynastyVillager villager) {
             if (this.occupiedBy != null) {
@@ -246,9 +382,7 @@ public class Plot {
         }
 
         public void save(CompoundTag tag) {
-            if (this.occupiedBy != null) {
-                tag.putUUID("villagerdynasties:slot_occupier",this.occupiedBy.getUUID());
-            }
+            tag.putUUID("villagerdynasties:slot_uuid", this.uuid);
 
             if (this.job != null) {
                 tag.putString("villagerdynasties:slot_job", this.job.name());
@@ -256,27 +390,33 @@ public class Plot {
         }
 
         public void load(CompoundTag tag) {
-            if (tag.hasUUID("villagerdynasties:slot_occupier")) {
-                var level = (ServerLevel) parentPlot.getParentZone().level();
-                this.occupiedBy = (AbstractDynastyVillager) level.getEntity(tag.getUUID("villagerdynasties:slot_occupier"));
-
-                if (occupiedBy !=null) {
-                    this.occupiedBy.occupyPlot(this.parentPlot);
-                }
+            if (tag.hasUUID("villagerdynasties:slot_uuid")) {
+                this.uuid = tag.getUUID("villagerdynasties:slot_uuid");
             }
 
             var jobTag = tag.getString("villagerdynasties:slot_job");
-            this.job = SlotJob.valueOf(jobTag);
+            this.job = Job.valueOf(jobTag);
         }
     }
 
-    public enum PlotType {
+    public enum PlotType implements StringRepresentable {
+        RESERVED,
         RESIDENTIAL,
+        RANCH,
         BURGAGE,
         MARKET,
+        HALL,
+        ;
+
+        public static final Codec<PlotType> CODEC = StringRepresentable.fromEnum(PlotType::values);
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.toString();
+        }
     }
 
     static {
-        STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, Plot::getStartPos, BlockPos.STREAM_CODEC, Plot::getEndPos, Partition.STREAM_CODEC.apply(ByteBufCodecs.list()), Plot::getPartitions, Plot::new);
+        STREAM_CODEC = StreamCodec.composite(UUIDUtil.STREAM_CODEC, Plot::getUUID, BlockPos.STREAM_CODEC, Plot::getStartPos, BlockPos.STREAM_CODEC, Plot::getEndPos, ByteBufCodecs.STRING_UTF8, Plot::getTypeName, Partition.STREAM_CODEC.apply(ByteBufCodecs.list()), Plot::getPartitions, Plot::new);
     }
 }
