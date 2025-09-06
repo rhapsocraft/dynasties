@@ -80,6 +80,7 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
 
     public void occupyPlot(Plot plot) {
         this.occupiedPlots.add(plot);
+        plot.getAvailableSlot().setOccupier(this);
 
         if (plot.getType() == Plot.PlotType.RESIDENTIAL) {
             this.brain.setMemory(ModMemoryTypes.HOME_PLOT.get(), plot);

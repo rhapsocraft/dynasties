@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.maestreaux.dynasties.mixin",
+  "compatibilityLevel": "JAVA_18",
+  "mixins": [],
+  "client": [
+    "RenderLevelMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

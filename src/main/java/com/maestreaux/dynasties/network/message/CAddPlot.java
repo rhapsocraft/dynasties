@@ -21,7 +21,10 @@ public record CAddPlot(Zone zone, Plot plot) implements CustomPacketPayload {
 
     public static void handle(CAddPlot message, CustomPayloadEvent.Context context) {
         context.enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> message.zone.addPlot(message.plot));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                var targetZone = Zone.getZoneByUUID(message.zone.getUUID());
+                targetZone.addPlot(message.plot);
+            });
         });
 
         context.setPacketHandled(true);

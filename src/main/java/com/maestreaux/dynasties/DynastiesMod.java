@@ -76,32 +76,6 @@ public class DynastiesMod
     {
     }
 
-    @SubscribeEvent
-    public static void onItemUse(PlayerInteractEvent.RightClickBlock event) {
-        if (!event.getLevel().isClientSide()) {
-            var serverLevel = (ServerLevel) event.getLevel();
-
-            if (event.getItemStack().is(ModItems.DEBUG_TOOL.get())) {
-                var hitPos = event.getHitVec().getBlockPos();
-                var level = event.getLevel();
-                var position = level.getBlockState(hitPos).isSuffocating(level, hitPos) ?  hitPos.above() : hitPos;
-
-                var newZone = new Zone(serverLevel, position);
-
-                Zone.add(serverLevel, newZone);
-
-                for(int i = 0; i < 1; i++) {
-                    var newVillager = new DynastiesVillager(serverLevel, newZone);
-                    serverLevel.addFreshEntity(newVillager);
-                    newVillager.moveTo(newZone.getCenter().above().getCenter());
-                }
-
-            } else if (event.getItemStack().is(Items.STICK)) {
-                Zone.getZones(serverLevel);
-            }
-        }
-    }
-
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event)

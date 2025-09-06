@@ -124,7 +124,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     private void setPosToBed(BlockPos blockPos, boolean isTent, Direction direction) {
         var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ?  0.6875D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
 
-        this.setPos(blockPos.getX(), blockPos.getY() + offset.y, blockPos.getZ());
+        this.setPos(blockPos.getX() + offset.x, blockPos.getY(), blockPos.getZ() + offset.z);
     }
 
     @Override
@@ -134,15 +134,19 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         }
 
         BlockState blockstate = this.level().getBlockState(pPos);
+
+
         if (blockstate.isBed(this.level(), pPos, this)) {
             blockstate.setBedOccupied(this.level(), pPos, this, true);
         }
 
-        this.setPose(Pose.SLEEPING);
-        this.setPosToBed(pPos, blockstate.is(ModBlocks.TENT.get()), blockstate.getValue(Tent.FACING));
-        this.setSleepingPos(pPos);
-        this.setDeltaMovement(Vec3.ZERO);
-        this.hasImpulse = true;
+        if (!blockstate.isAir()) {
+            this.setPose(Pose.SLEEPING);
+            this.setPosToBed(pPos, blockstate.is(ModBlocks.TENT.get()), blockstate.getValue(Tent.FACING));
+            this.setSleepingPos(pPos);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.hasImpulse = false;
+        }
     }
 
     @Override
@@ -177,10 +181,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         );
     }
 
-    @Override
     public BrainActivityGroup<DynastiesVillager> getIdleTasks() {
         return BrainActivityGroup.idleTasks(
-                new ClaimPlot<>(),
                 //new GoHome<>(),
                 new TargetOrRetaliate<>(),
                 new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>())
@@ -193,25 +195,32 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new SetPlayerLookTarget<>(),
                 new LookAtTarget<>(),
                 new InteractWithDoor<>().holdDoorsOpenFor((entity, living, doorPos) -> false),
-                new MoveToWalkTarget<>()
+                new MoveToWalkTarget<>(),
+                new ClaimPlot<>(),
+                new DoConstruction<>()
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getWorkTasks() {
-        return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(1).behaviours(
-                new DoConstruction<>(),
+        return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(11).behaviours(
+                new StockWares<>(),
                 new FetchSeeds<>(),
-                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>()),
-                new StockWares<>()
+                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>()),
+                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>())
         );
     }
 
     private BrainActivityGroup<DynastiesVillager> getRestTasks() {
         return new BrainActivityGroup<DynastiesVillager>(Activity.REST).priority(1).behaviours(
-                new SleepInTent<>()
+                new SleepInTent<>(),
+                new GoHome<>()
         );
     }
 
+    @Override
+    public List<Activity> getActivityPriorities() {
+        return ObjectArrayList.of(Activity.FIGHT);
+    }
 
     @Override
     public Map<Activity, BrainActivityGroup<? extends DynastiesVillager>> getAdditionalTasks() {
@@ -223,7 +232,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 
     @Override
     public SmartBrainSchedule getSchedule() {
-        return new BasicSchedule().activityAt(1000, Activity.IDLE).activityAt(5000, Activity.WORK).activityAt(11000, Activity.REST);
+        return new BasicSchedule().activityAt(1000, Activity.IDLE).activityAt(2500, Activity.WORK).activityAt(12000, Activity.REST);
     }
 
 //    @Override

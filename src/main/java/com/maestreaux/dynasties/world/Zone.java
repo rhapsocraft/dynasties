@@ -84,6 +84,7 @@ public class Zone {
     public static List<Zone> getZones() {
         return ZONES;
     }
+
     public void save(ServerLevel level) {
         var data = ZoneSavedData.getInstance(level);
         data.save();
@@ -127,13 +128,9 @@ public class Zone {
     }
 
 
-    public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type, int numSlots) {
+    public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type) {
         var newPlot = new Plot(startPos, endPos, type);
         newPlot.setParentZone(this);
-
-        for(int i = 0; i < numSlots; i++) {
-            newPlot.addEmptySlot();
-        }
 
         this.plots.add(newPlot);
 
@@ -142,10 +139,6 @@ public class Zone {
         }
 
         return newPlot;
-    }
-
-    public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type) {
-        return this.addPlot(startPos, endPos, type, 0);
     }
 
     public void addPlot(Plot plot) {

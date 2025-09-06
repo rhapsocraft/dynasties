@@ -29,7 +29,9 @@ public class PlotUtils {
     }
 
     public static boolean isValidPosition(BlockPos startPos, BlockPos endPos, Zone parentZone) {
-        return parentZone.getPlots().stream().noneMatch(plot -> overlaps(startPos, endPos, plot.getStartPos(), plot.getEndPos()));
+        var isOutsideZone = parentZone.getBoundingBox().contains(startPos.getX(), startPos.getY(), startPos.getZ()) && parentZone.getBoundingBox().contains(endPos.getX(), endPos.getY(), endPos.getZ());
+
+        return parentZone.getPlots().stream().noneMatch(plot -> overlaps(startPos, endPos, plot.getStartPos(), plot.getEndPos())) && !isOutsideZone;
     }
 
     public static boolean isValidPlot(BlockPos startPos, BlockPos endPos, Zone parentZone) {

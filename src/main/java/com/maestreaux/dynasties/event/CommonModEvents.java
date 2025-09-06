@@ -1,10 +1,15 @@
 package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.init.ModItems;
+import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.maestreaux.dynasties.init.ModEntityTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 

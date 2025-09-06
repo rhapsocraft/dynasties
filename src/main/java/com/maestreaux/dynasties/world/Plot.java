@@ -195,12 +195,24 @@ public class Plot {
         }
     }
 
+    public enum SlotJob {
+        TRADER,
+        WORKER
+    }
+
     public static class Slot {
         private final Plot parentPlot;
         private AbstractDynastyVillager occupiedBy = null;
+        private SlotJob job;
 
         public Slot(Plot parent) {
             this.parentPlot = parent;
+            this.job = null;
+        }
+
+        public Slot(Plot parent, SlotJob job) {
+            this.parentPlot = parent;
+            this.job = job;
         }
 
         public void refreshSlot() {

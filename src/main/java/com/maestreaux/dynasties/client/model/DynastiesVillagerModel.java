@@ -2,10 +2,13 @@ package com.maestreaux.dynasties.client.model;// Made with Blockbench 4.11.2
 // Exported for Minecraft version 1.17 or later with Mojang mappings
 // Paste this class into your mod and generate all required imports
 
-
+import com.google.common.collect.Maps;
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.client.animation.DynastiesVillagerAnimation;
 import com.maestreaux.dynasties.client.renderer.entity.state.DynastiesVillagerRenderState;
+import net.minecraft.client.animation.AnimationChannel;
+import net.minecraft.client.animation.AnimationDefinition;
+import net.minecraft.client.animation.Keyframe;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -14,7 +17,13 @@ import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.util.Mth;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.AnimationState;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderState> implements HeadedModel {
     // This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
@@ -44,34 +53,112 @@ public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderS
     private final ModelPart LeftLeg;
     private final ModelPart LeftKnee;
 
+    private Map<ModelPart, PartPose> poseMap = Maps.newHashMap();
+
+    private final static AnimationDefinition STATIC_ANIM = DynastiesVillagerAnimation.BASE_POSE;
+    private static final AnimationDefinition WALK_ANIM = offsetAnimation(DynastiesVillagerAnimation.WALK);
+    private static final AnimationDefinition WALK_ARMS_ANIM = offsetAnimation(DynastiesVillagerAnimation.WALK_ARMS);
+    private static final AnimationDefinition IDLE1_ANIM = offsetAnimation(DynastiesVillagerAnimation.IDLE1);
+
     public DynastiesVillagerModel(ModelPart rootPart) {
         super(rootPart);
-        this.root = rootPart.getChild("root");
-        this.villager = this.root.getChild("villager");
-        this.body = this.villager.getChild("body");
-        this.RightArm = this.body.getChild("RightArm");
-        this.RightElbow = this.RightArm.getChild("RightElbow");
-        this.LeftArm = this.body.getChild("LeftArm");
-        this.LeftElbow = this.LeftArm.getChild("LeftElbow");
-        this.arms = this.body.getChild("arms");
-        this.head = this.body.getChild("head");
-        this.RightEye = this.head.getChild("RightEye");
-        this.RightEyelid = this.RightEye.getChild("RightEyelid");
-        this.LeftEye = this.head.getChild("LeftEye");
-        this.LeftEyelid = this.LeftEye.getChild("LeftEyelid");
-        this.LeftPupil = this.head.getChild("LeftPupil");
-        this.RightPupil = this.head.getChild("RightPupil");
-        this.eyebrow = this.head.getChild("eyebrow");
-        this.RightEyebrow = this.eyebrow.getChild("RightEyebrow");
-        this.LeftEyebrow = this.eyebrow.getChild("LeftEyebrow");
-        this.mouth = this.head.getChild("mouth");
-        this.nose = this.head.getChild("nose");
-        this.RightLeg = this.villager.getChild("RightLeg");
-        this.RightKnee = this.RightLeg.getChild("RightKnee");
-        this.LeftLeg = this.villager.getChild("LeftLeg");
-        this.LeftKnee = this.LeftLeg.getChild("LeftKnee");
+        this.root = getChildWithInitialPose(rootPart, "root");
+        this.villager = getChildWithInitialPose(this.root, "villager");
+        this.body = getChildWithInitialPose(this.villager, "body");
+        this.RightArm = getChildWithInitialPose(this.body, "RightArm");
+        this.RightElbow = getChildWithInitialPose(this.RightArm, "RightElbow");
+        this.LeftArm = getChildWithInitialPose(this.body, "LeftArm");
+        this.LeftElbow = getChildWithInitialPose(this.LeftArm, "LeftElbow");
+        this.arms = getChildWithInitialPose(this.body, "arms");
+        this.head = getChildWithInitialPose(this.body, "head");
+        this.RightEye = getChildWithInitialPose(this.head, "RightEye");
+        this.RightEyelid = getChildWithInitialPose(this.RightEye, "RightEyelid");
+        this.LeftEye = getChildWithInitialPose(this.head, "LeftEye");
+        this.LeftEyelid = getChildWithInitialPose(this.LeftEye, "LeftEyelid");
+        this.LeftPupil = getChildWithInitialPose(this.head, "LeftPupil");
+        this.RightPupil = getChildWithInitialPose(this.head, "RightPupil");
+        this.eyebrow = getChildWithInitialPose(this.head, "eyebrow");
+        this.RightEyebrow = getChildWithInitialPose(this.eyebrow, "RightEyebrow");
+        this.LeftEyebrow = getChildWithInitialPose(this.eyebrow, "LeftEyebrow");
+        this.mouth = getChildWithInitialPose(this.head, "mouth");
+        this.nose = getChildWithInitialPose(this.head, "nose");
+        this.RightLeg = getChildWithInitialPose(this.villager, "RightLeg");
+        this.RightKnee = getChildWithInitialPose(this.RightLeg, "RightKnee");
+        this.LeftLeg = getChildWithInitialPose(this.villager, "LeftLeg");
+        this.LeftKnee = getChildWithInitialPose(this.LeftLeg, "LeftKnee");
 
-        toggleArms(false);
+        toggleArms(true);
+    }
+
+    private ModelPart getChildWithInitialPose(ModelPart part, String childName) {
+        var child = part.getChild(childName);
+        this.poseMap.put(child, part.storePose());
+
+        var animChannels = STATIC_ANIM.boneAnimations().get(childName);
+
+        if (animChannels != null) {
+            var pos = new Vector3f(child.x, child.y, child.z);
+            var rot = new Vector3f();
+            var scale = new Vector3f(child.xScale, child.yScale, child.zScale);
+
+            animChannels.forEach(channel -> {
+                var firstKeyFrame = channel.keyframes()[0];
+
+                if (channel.target() == AnimationChannel.Targets.POSITION) {
+                    pos.add(firstKeyFrame.target());
+                } else if (channel.target() == AnimationChannel.Targets.ROTATION) {
+                    rot.add(firstKeyFrame.target());
+                } else if (channel.target() == AnimationChannel.Targets.SCALE) {
+                    scale.add(firstKeyFrame.target());
+                }
+            });
+
+            child.setInitialPose(new PartPose(pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, scale.x, scale.y, scale.z));
+        }
+
+        return child;
+    }
+
+    private static AnimationDefinition offsetAnimation(AnimationDefinition animationToOffset) {
+        var builder = AnimationDefinition.Builder.withLength(animationToOffset.lengthInSeconds());
+
+        if (animationToOffset.looping()) {
+            builder.looping();
+        }
+
+        var animations = animationToOffset.boneAnimations();
+
+        animations.forEach((key, animation) -> {
+            var staticAnimChannels = STATIC_ANIM.boneAnimations().get(key);
+            Map<AnimationChannel.Target, AnimationChannel> staticAnimChannelsMap;
+
+            if (staticAnimChannels != null) {
+                staticAnimChannelsMap = staticAnimChannels.stream().collect(Collectors.toMap(AnimationChannel::target, channel -> channel));
+            } else {
+                staticAnimChannelsMap = Map.of();
+            }
+
+            animation.forEach(channel -> {
+                    var offsetKeyframes = Arrays.stream(channel.keyframes()).map(keyframe -> {
+                        var staticAnimChannel = staticAnimChannelsMap.get(channel.target());
+
+                        if (staticAnimChannel != null) {
+                            var keyFrameToSub = staticAnimChannel.keyframes()[0];
+
+                            var newKeyframeTarget = keyframe.target().sub(keyFrameToSub.target());
+
+                            return new Keyframe(keyframe.timestamp(), newKeyframeTarget, keyframe.interpolation());
+                        }
+
+                        return keyframe;
+                    }).toList().toArray(new Keyframe[0]);
+
+
+                    builder.addAnimation(key, new AnimationChannel(channel.target(), offsetKeyframes));
+                });
+        });
+
+        return builder.build();
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -98,6 +185,12 @@ public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderS
 
         PartDefinition head = body.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 25).addBox(-4.0F, -11.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -10.0F, 0.0F));
 
+        PartDefinition eyebrow = head.addOrReplaceChild("eyebrow", CubeListBuilder.create().texOffs(48, 29).addBox(-1.0F, -0.5F, 0.75F, 2.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -5.5F, -4.08F));
+
+        PartDefinition RightEyebrow = eyebrow.addOrReplaceChild("RightEyebrow", CubeListBuilder.create().texOffs(68, 30).addBox(-3.0F, -1.0F, 0.0F, 3.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.5F, 0.0F));
+
+        PartDefinition LeftEyebrow = eyebrow.addOrReplaceChild("LeftEyebrow", CubeListBuilder.create().texOffs(68, 30).addBox(0.0F, -1.0F, 0.0F, 3.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.5F, 0.0F));
+
         PartDefinition RightEye = head.addOrReplaceChild("RightEye", CubeListBuilder.create().texOffs(68, 26).addBox(-1.0F, -1.0F, 0.0F, 2.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, -4.0F, -4.02F));
 
         PartDefinition RightEyelid = RightEye.addOrReplaceChild("RightEyelid", CubeListBuilder.create().texOffs(68, 34).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -1.0F, -0.02F));
@@ -109,12 +202,6 @@ public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderS
         PartDefinition LeftPupil = head.addOrReplaceChild("LeftPupil", CubeListBuilder.create().texOffs(68, 28).addBox(-0.5F, -0.5F, 0.0F, 1.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(1.75F, -4.5F, -4.03F));
 
         PartDefinition RightPupil = head.addOrReplaceChild("RightPupil", CubeListBuilder.create().texOffs(70, 28).addBox(-0.5F, -0.5F, 0.0F, 1.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(-1.75F, -4.5F, -4.03F));
-
-        PartDefinition eyebrow = head.addOrReplaceChild("eyebrow", CubeListBuilder.create(), PartPose.offset(0.0F, -5.5F, -4.08F));
-
-        PartDefinition RightEyebrow = eyebrow.addOrReplaceChild("RightEyebrow", CubeListBuilder.create().texOffs(68, 30).addBox(-3.0F, -1.0F, 0.0F, 3.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.5F, 0.0F));
-
-        PartDefinition LeftEyebrow = eyebrow.addOrReplaceChild("LeftEyebrow", CubeListBuilder.create().texOffs(68, 30).addBox(0.0F, -1.0F, 0.0F, 3.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.5F, 0.0F));
 
         PartDefinition mouth = head.addOrReplaceChild("mouth", CubeListBuilder.create().texOffs(68, 32).addBox(-2.0F, -0.5F, 0.0F, 4.0F, 1.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.5F, -4.05F));
 
@@ -138,43 +225,51 @@ public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderS
     }
 
     @Override
+    protected void animate(AnimationState p_368871_, AnimationDefinition p_365491_, float p_363110_, float p_368202_) {
+        super.animate(p_368871_, p_365491_, p_363110_, p_368202_);
+    }
+
+    @Override
+    protected void animateWalk(AnimationDefinition p_363127_, float p_364817_, float p_364163_, float p_365350_, float p_365167_) {
+        super.animateWalk(p_363127_, p_364817_, p_364163_, p_365350_, p_365167_);
+    }
+
+    @Override
     public void setupAnim(DynastiesVillagerRenderState renderState) {
         super.setupAnim(renderState);
-        // root.getAllParts().forEach(ModelPart::resetPose);
 
         applyHeadRotation(renderState.yRot, renderState.xRot);
-
-        animate(renderState.idleFaceAnimationState, DynastiesVillagerAnimation.FACE_1, renderState.ageInTicks);
-        animate(renderState.idleAnimationState, DynastiesVillagerAnimation.IDLE1, renderState.ageInTicks, 0.5F);
 
         if (renderState.isFleeing) {
             animateWalk(DynastiesVillagerAnimation.FLEE, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2.5F, 2.5F);
             animateWalk(DynastiesVillagerAnimation.FLEE_ARMS, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2.5F, 2.5F);
         } else {
-            animateWalk(DynastiesVillagerAnimation.WALK, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 1.5F, 2.5F);
-            animateWalk(DynastiesVillagerAnimation.WALK_ARMS, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 1.5F, 2.5F);
+            animateWalk(WALK_ANIM, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2F, 2.5F);
+            animateWalk(WALK_ARMS_ANIM, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2F, 2.5F);
         }
 
-        this.toggleArms(renderState.idleAnimationState.isStarted());
+        animate(renderState.idleFaceAnimationState, DynastiesVillagerAnimation.FACE_1, renderState.ageInTicks);
+        animate(renderState.idleAnimationState, IDLE1_ANIM, renderState.ageInTicks, 0.5F);
 
+        //this.toggleArms(renderState.idleAnimationState.isStarted());
     }
 
     private void applyHeadRotation(float pNetHeadYaw, float pHeadPitch) {
-        float sinYaw = Mth.sin(pNetHeadYaw * ((float)Math.PI / 180F));
-        float cosPitch = Mth.cos(pHeadPitch * ((float)Math.PI / 180F)) - 1.0472F;
+        float sinYaw = Mth.sin(pNetHeadYaw * ((float) Math.PI / 180F));
+        float cosPitch = Mth.cos(pHeadPitch * ((float) Math.PI / 180F)) - 1.0472F;
 
         pNetHeadYaw = Mth.clamp(pNetHeadYaw, -30.0F, 30.0F);
         pHeadPitch = Mth.clamp(pHeadPitch, -25.0F, 45.0F);
 
-        float yawRadians = pNetHeadYaw * ((float)Math.PI / 180F);
-        float pitchRadians = pHeadPitch * ((float)Math.PI / 180F);
+        float yawRadians = pNetHeadYaw * ((float) Math.PI / 180F);
+        float pitchRadians = pHeadPitch * ((float) Math.PI / 180F);
 
         float rightNetPupilYaw = Mth.clamp(sinYaw - yawRadians, -0.25F, 0.75F);
         float leftNetPupilYaw = Mth.clamp(sinYaw - yawRadians, -0.75F, 0.25F);
         float pupilPitch = Mth.clamp(cosPitch - pitchRadians, 0F, 0.125F);
 
-        this.head.yRot = pNetHeadYaw * ((float)Math.PI / 180F);
-        this.head.xRot = pHeadPitch * ((float)Math.PI / 180F);
+        this.head.yRot = pNetHeadYaw * ((float) Math.PI / 180F);
+        this.head.xRot = pHeadPitch * ((float) Math.PI / 180F);
 
         this.RightPupil.x -= rightNetPupilYaw;
         this.LeftPupil.x -= leftNetPupilYaw;

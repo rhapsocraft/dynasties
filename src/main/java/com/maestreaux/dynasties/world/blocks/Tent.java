@@ -40,12 +40,13 @@ public class Tent extends HorizontalDirectionalBlock implements EntityBlock {
                 BlockBehaviour.Properties.of()
                         .noOcclusion()
                         .isSuffocating((p1, p2, p3) -> false)
+                        .noCollission()
                         .setId(ResourceKey.create(ForgeRegistries.BLOCKS.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, name)))
         );
     }
 
     @Override
-    protected VoxelShape getCollisionShape(BlockState p_49547_, BlockGetter p_49548_, BlockPos p_49549_, CollisionContext p_49550_) {
+    protected VoxelShape getCollisionShape(BlockState p_49547_, BlockGetter p_49548_, BlockPos p_49549_, CollisionContext colContext) {
         return COLLISSION_SHAPE;
     }
 

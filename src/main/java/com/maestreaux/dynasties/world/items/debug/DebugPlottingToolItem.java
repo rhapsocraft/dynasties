@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class DebugPlottingToolItem extends Item {
     private BlockPos currentPlotStartPos;
+    public static BlockPos LAST_SELECTED_BLOCK_POS = null;
 
     public DebugPlottingToolItem(Item.Properties pProperties) {
         super(pProperties);
@@ -30,11 +31,12 @@ public class DebugPlottingToolItem extends Item {
         if (!pContext.getLevel().isClientSide()) {
             var serverLevel = (ServerLevel) pContext.getLevel();
             var parentZone = Zone.getContainerZone(serverLevel, pContext.getClickedPos());
+            var player = pContext.getPlayer();
 
             if (parentZone != null) {
-                if (pContext.getPlayer() != null && pContext.getPlayer().isShiftKeyDown()) {
-                    parentZone.clearPlots();
-                    return InteractionResult.SUCCESS;
+                if (player != null && pContext.getPlayer().isShiftKeyDown()) {
+                    // parentZone.clearPlots();
+                    return InteractionResult.SUCCESS_SERVER;
                 }
 
                 if (this.currentPlotStartPos == null) {
@@ -46,7 +48,7 @@ public class DebugPlottingToolItem extends Item {
                     if (newPosZone != null && !this.currentPlotStartPos.equals(newPos) && PlotUtils.isValidPlot(currentPlotStartPos, newPos, parentZone)) {
                         var endPosOffset = newPos.offset(-parentZone.getCenter().getX(), -this.currentPlotStartPos.getY() - 1, -parentZone.getCenter().getZ());
                         var startPosOffset = this.currentPlotStartPos.subtract(parentZone.getCenter());
-                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESIDENTIAL, 2);
+                        var newPlot = parentZone.addPlot(startPosOffset, endPosOffset, Plot.PlotType.RESIDENTIAL);
 
                         PlotUtils.debugSetPartitions(newPlot);
 
@@ -57,8 +59,18 @@ public class DebugPlottingToolItem extends Item {
                     this.currentPlotStartPos = null;
                 }
 
-                return InteractionResult.SUCCESS;
+                return InteractionResult.SUCCESS_SERVER;
             }
+        } else {
+            LAST_SELECTED_BLOCK_POS = LAST_SELECTED_BLOCK_POS == null ? pContext.getClickedPos() : null;
+
+            var player = pContext.getPlayer();
+
+            if (player != null && player.isShiftKeyDown()) {
+                LAST_SELECTED_BLOCK_POS = null;
+            }
+
+            return InteractionResult.SUCCESS;
         }
 
         return InteractionResult.PASS;

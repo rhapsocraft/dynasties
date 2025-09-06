@@ -19,7 +19,7 @@ public class AvailablePlotsSensor<E extends AbstractDynastyVillager> extends Ext
         if (entity.getHomeZone() != null) {
             var availablePlots = entity.getHomeZone().getAvailablePlots();
 
-            if (availablePlots != null) {
+            if (availablePlots != null && !availablePlots.isEmpty()) {
                 BrainUtil.setMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get(), availablePlots);
             }
         }

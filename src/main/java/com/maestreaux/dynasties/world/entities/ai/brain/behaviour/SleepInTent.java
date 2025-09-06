@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.phys.Vec3;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtil;
 
@@ -27,6 +28,7 @@ public class SleepInTent<E extends AbstractDynastyVillager> extends ExtendedBeha
         if (this.targetPos != null && !entity.isSleeping()) {
             if (isCloseEnoughToTarget(entity)) {
                 entity.startSleeping(this.targetPos);
+                this.targetPos = null;
             } else {
                 BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetPos, 0.6F, 0));
             }

@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -49,6 +50,7 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
                     entity.level().destroyBlock(this.targetCrop, false, entity);
                     this.targetCrop = null;
                 } else {
+                    BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.targetCrop));
                     BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetCrop, 0.6F, 1));
                 }
             } else {
@@ -60,6 +62,7 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
                 }
 
                 BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
             }
         }
     }
