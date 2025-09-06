@@ -3,7 +3,6 @@ package com.maestreaux.dynasties.world.entities.ai.brain.sensor;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.init.ModSensorTypes;
 import com.maestreaux.dynasties.world.Partition;
-import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
@@ -13,8 +12,7 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.api.core.sensor.PredicateSensor;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,7 +22,7 @@ public class FarmlandsSensor<E extends AbstractDynastyVillager> extends Extended
 
     protected void doTick(ServerLevel level, E entity) {
         List<BlockPos> farmlands = new ObjectArrayList();
-        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        var homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
             var partitions = homePlot.getPartitionsByType(Partition.PartitionType.GARDEN);
@@ -45,10 +43,10 @@ public class FarmlandsSensor<E extends AbstractDynastyVillager> extends Extended
             }
 
             if (farmlands.isEmpty()) {
-                BrainUtils.clearMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get());
+                BrainUtil.clearMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get());
             } else {
                 farmlands.sort(Comparator.comparingDouble(farmland -> entity.distanceToSqr(farmland.getCenter())));
-                BrainUtils.setMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get(), farmlands);
+                BrainUtil.setMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get(), farmlands);
             }
         }
     }

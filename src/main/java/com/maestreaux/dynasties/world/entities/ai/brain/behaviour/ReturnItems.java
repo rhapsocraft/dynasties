@@ -14,7 +14,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -24,7 +24,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
     private BaseContainerBlockEntity targetContainer = null;
 
     protected void start(E entity) {
-        var containers = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
+        var containers = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
 
         if (containers != null) {
             var entityInv = entity.getInventory();
@@ -61,11 +61,11 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
                             currentSlot = 0;
                         }
 
-                        BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
-                        BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                        BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
+                        BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
                     } else {
-                        BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
-                        BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
+                        BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+                        BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
                     }
                 } else {
                     this.targetContainer = inventoryIter.next();

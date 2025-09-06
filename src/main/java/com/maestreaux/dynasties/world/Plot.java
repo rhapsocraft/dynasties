@@ -6,6 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -15,6 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class Plot {
+    public static StreamCodec<RegistryFriendlyByteBuf, Plot> STREAM_CODEC;
+
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final BlockPos startPos;
@@ -38,9 +43,14 @@ public class Plot {
     }
 
     public Plot(BlockPos startPos, BlockPos endPos) {
-        this(startPos, endPos, null);
+        this(startPos, endPos, (PlotType) null);
     }
 
+    public Plot(BlockPos startPos, BlockPos endPos, List<Partition> partitions) {
+        this(startPos, endPos);
+
+        partitions.forEach(this::addPartition);
+    }
 
     private static int mostSouthernEast(Vec3i pos1, Vec3i pos2) {
         if (pos1.getX() + pos1.getZ() > pos2.getX() + pos2.getZ()) {
@@ -233,5 +243,9 @@ public class Plot {
         RESIDENTIAL,
         BURGAGE,
         MARKET,
+    }
+
+    static {
+        STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, Plot::getStartPos, BlockPos.STREAM_CODEC, Plot::getEndPos, Partition.STREAM_CODEC.apply(ByteBufCodecs.list()), Plot::getPartitions, Plot::new);
     }
 }

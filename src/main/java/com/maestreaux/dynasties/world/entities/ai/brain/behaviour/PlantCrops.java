@@ -15,7 +15,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ public class PlantCrops<E extends AbstractDynastyVillager> extends ExtendedBehav
     private BlockPos targetFarmLand;
 
     protected void start(E entity) {
-        var farmlands = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get());
+        var farmlands = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_FARMLANDS.get());
 
         if (farmlands != null) {
             if (this.targetFarmLand != null) {
@@ -48,14 +48,14 @@ public class PlantCrops<E extends AbstractDynastyVillager> extends ExtendedBehav
 
                     this.targetFarmLand = null;
                 } else {
-                    BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
-                    BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+                    BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
+                    BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
                 }
 
             } else {
                 this.targetFarmLand = farmlands.stream().filter(farmland -> entity.level().getBlockState(farmland.above()).isAir()).findFirst().orElse(null);
-                BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
-                BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
             }
         }
     }

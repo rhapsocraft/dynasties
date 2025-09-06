@@ -2,15 +2,13 @@ package com.maestreaux.dynasties.world.entities.ai.brain.sensor;
 
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.init.ModSensorTypes;
-import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.api.core.sensor.PredicateSensor;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -22,7 +20,7 @@ public class AvailablePlotsSensor<E extends AbstractDynastyVillager> extends Ext
             var availablePlots = entity.getHomeZone().getAvailablePlots();
 
             if (availablePlots != null) {
-                BrainUtils.setMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get(), availablePlots);
+                BrainUtil.setMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get(), availablePlots);
             }
         }
     }

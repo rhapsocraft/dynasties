@@ -1,7 +1,11 @@
 package com.maestreaux.dynasties.core;
 
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.HashMap;
@@ -63,13 +67,15 @@ public class MarketAgent {
         }
     }
 
-    public void increaseOfferStock(Item itemToSell, int quantity) {
-        var offer = this.activeOffers.computeIfAbsent(itemToSell, (item) -> new MarketAgent.TradeOffer(this, itemToSell, 0));
+    public void updateStock(ItemStack itemToSell, int quantity) {
+        var offer = this.activeOffers.computeIfAbsent(itemToSell.getItem(), (item) -> new MarketAgent.TradeOffer(this, itemToSell));
+        offer.setItemOffered(itemToSell);
         offer.setQuantity(offer.quantityOffered + quantity);
         this.entity.updateTradeOffers();
     }
 
-    public void updateOffer(Item item, int quantity) {
+    public void updateOffer(ItemStack stack, int quantity) {
+        var item = stack.getItem();
         this.adjustValuation(item);
 
         var itemValuation = valuations.get(item);
@@ -81,15 +87,13 @@ public class MarketAgent {
             activeOffer.setPrice(price);
             activeOffer.setQuantity(quantity);
         } else {
-            this.activeOffers.put(item, new TradeOffer(this, item, quantity, price));
+            this.activeOffers.put(item, new TradeOffer(this, stack, quantity, price));
         }
     }
 
     public Map<Item, TradeOffer> getActiveOffers() {
         return this.activeOffers;
     }
-
-
 
     public void adjustValuation(Item item) {
         var activeItemOffer = this.activeOffers.get(item);
@@ -110,29 +114,31 @@ public class MarketAgent {
     // public float speculate() {}
 
     public static class TradeOffer {
+        public static StreamCodec<RegistryFriendlyByteBuf, TradeOffer> STREAM_CODEC;
+
         private MarketAgent agent;
-        private final Item itemOffered;
+        private ItemStack itemOffered;
         private int quantityOffered;
         private int quantitySold = 0;
         private int priceEach;
 
-        public TradeOffer(Item itemOffered, int quantity, int quantitySold, int price) {
-            this.itemOffered = itemOffered;
+        public TradeOffer(ItemStack itemStackOffered, int quantity, int quantitySold, int price) {
+            this.itemOffered = itemStackOffered;
             this.quantityOffered = quantity;
             this.priceEach = price;
             this.quantitySold = quantitySold;
         }
 
-        public TradeOffer(MarketAgent agent, Item itemOffered, int quantity, int price) {
+        public TradeOffer(MarketAgent agent, ItemStack itemOffered, int quantity, int price) {
             this(itemOffered, quantity, 0, price);
             this.agent = agent;
         }
 
-        public TradeOffer(MarketAgent agent, Item itemOffered, int quantity) {
-            this(agent, itemOffered, quantity, BASE_PRICE);
+        public TradeOffer(MarketAgent agent, ItemStack itemOffered) {
+            this(agent, itemOffered, itemOffered.getCount(), BASE_PRICE);
         }
 
-        public Item getItemOffered() {
+        public ItemStack getItemOffered() {
             return this.itemOffered;
         }
 
@@ -144,16 +150,16 @@ public class MarketAgent {
             return this.quantitySold;
         }
 
+        public void setItemOffered(ItemStack itemStack) {
+            this.itemOffered = itemStack;
+        }
+
         public AbstractDynastyVillager getEntity() {
             return this.agent.entity;
         }
 
         public int getStock() {
-            var entity = this.getEntity();
-            var offeredItemSlot = entity.getTradeSlot().get(this.getItemOffered());
-            var itemstack = entity.getTradeInventory().getItem(offeredItemSlot);
-
-            return itemstack.getCount();
+            return itemOffered.getCount();
         }
 
         public int getPrice() {
@@ -170,7 +176,7 @@ public class MarketAgent {
             this.agent.entity.updateTradeOffers();
         }
 
-        public int sell(int quantity) {
+        public ItemStack sell(int quantity) {
             int actualQuantity = Math.min(this.getStock(), quantity);
 
             if (actualQuantity > 0) {
@@ -181,25 +187,39 @@ public class MarketAgent {
                 this.agent.setMoney(newBalance);
 
                 var entity = this.getEntity();
-                var tradeInventory = entity.getTradeInventory();
-                var tradeSlot = entity.getTradeSlot();
+                var item = this.itemOffered.getItem();
 
                 // remove items from slot
-                var slot = tradeSlot.get(this.getItemOffered());
+                var itemStackToSell = this.itemOffered.copy();
+                itemStackToSell.setCount(actualQuantity);
 
-                if (slot != null) {
-                    var itemstack = tradeInventory.getItem(slot);
-                    itemstack.shrink(actualQuantity);
-                }
+                this.itemOffered.shrink(actualQuantity);
 
-                this.agent.adjustValuation(this.itemOffered);
+                this.agent.valuations.compute(item, (itemToValue, currentValuation) -> {
+                    var valuation = currentValuation == null ? MARKETABLE_ITEMS.get(itemToValue) * this.agent.getAverageValuations() : currentValuation;
+                    return valuation * 1.01F;
+                });
+
                 entity.updateTradeOffers();
 
                 // TODO: TEMPORARY
-                this.setPrice(Math.round(this.agent.valuations.get(this.itemOffered) * BASE_PRICE));
+                this.setPrice(Math.round(this.agent.valuations.get(item) * BASE_PRICE));
+
+                return itemStackToSell;
             }
 
-            return actualQuantity;
+            return null;
+        }
+
+
+
+        static {
+            STREAM_CODEC = StreamCodec.composite(
+                    ItemStack.STREAM_CODEC, (offer) -> offer.itemOffered,
+                    ByteBufCodecs.INT, (offer) -> offer.quantityOffered,
+                    ByteBufCodecs.INT, (offer) -> offer.quantitySold,
+                    ByteBufCodecs.INT, (offer) -> offer.priceEach,
+                    TradeOffer::new);
         }
     }
 }

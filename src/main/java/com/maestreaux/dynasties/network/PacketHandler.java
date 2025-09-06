@@ -1,63 +1,60 @@
 package com.maestreaux.dynasties.network;
 
+import com.maestreaux.dynasties.network.message.CAddPlot;
+import com.maestreaux.dynasties.network.message.CAddZone;
+import com.maestreaux.dynasties.network.message.CZonesList;
+import com.maestreaux.dynasties.network.message.SBuyFromTrader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
-import com.maestreaux.dynasties.network.ZonePacket.*;
-import com.maestreaux.dynasties.network.TradePacket.*;
+import net.minecraftforge.network.*;
+
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
+    private static final int PROTOCOL_VERSION = 1;
     private static int packetId = 0;
     private static int id() {
         return packetId++;
     }
 
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation("villagerdynasties", "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
+    public static final SimpleChannel INSTANCE = ChannelBuilder
+            .named(ResourceLocation.fromNamespaceAndPath("villagerdynasties", "main"))
+            .networkProtocolVersion(PROTOCOL_VERSION)
+            .clientAcceptedVersions(Channel.VersionTest.exact(PROTOCOL_VERSION))
+            .serverAcceptedVersions(Channel.VersionTest.exact(PROTOCOL_VERSION))
+            .simpleChannel();
+
 
     public static void register() {
-        INSTANCE.messageBuilder(CZonesPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(CZonesPacket::encode)
-                .decoder(CZonesPacket::new)
-                .consumerMainThread(CZonesPacket::handle)
+        INSTANCE.messageBuilder(CZonesList.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CZonesList.STREAM_CODEC)
+                .consumerMainThread(CZonesList::handle)
                 .add();
 
-        INSTANCE.messageBuilder(CAddZonePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(CAddZonePacket::encode)
-                .decoder(CAddZonePacket::new)
-                .consumerMainThread(CAddZonePacket::handle)
+        INSTANCE.messageBuilder(CAddZone.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CAddZone.STREAM_CODEC)
+                .consumerMainThread(CAddZone::handle)
                 .add();
 
-        INSTANCE.messageBuilder(CAddPlotPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(CAddPlotPacket::encode)
-                .decoder(CAddPlotPacket::new)
-                .consumerMainThread(CAddPlotPacket::handle)
+        INSTANCE.messageBuilder(CAddPlot.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .codec(CAddPlot.STREAM_CODEC)
+                .consumerMainThread(CAddPlot::handle)
                 .add();
 
-        INSTANCE.messageBuilder(SBuyFromTraderPacket.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .encoder(SBuyFromTraderPacket::encode)
-                .decoder(SBuyFromTraderPacket::new)
-                .consumerMainThread(SBuyFromTraderPacket::handle)
+        INSTANCE.messageBuilder(SBuyFromTrader.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .codec(SBuyFromTrader.STREAM_CODEC)
+                .consumerMainThread(SBuyFromTrader::handle)
                 .add();
     }
 
-    public static void sendToAll(Object msg) {
-        INSTANCE.send(PacketDistributor.ALL.noArg(), msg);
+    public static <T> void sendToAll(T message) {
+        INSTANCE.send(message, PacketDistributor.ALL.noArg());
     }
 
-    public static void sendToPlayer(Object msg, ServerPlayer player) {
-        INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), msg);
+    public static <T> void sendToPlayer(T message, ServerPlayer player) {
+        INSTANCE.send(message, PacketDistributor.PLAYER.with(player));
     }
 
     public static void sendToServer(Object msg) {
-        INSTANCE.sendToServer(msg);
+        INSTANCE.send(msg, PacketDistributor.SERVER.noArg());
     }
 }

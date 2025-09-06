@@ -6,6 +6,7 @@ import com.maestreaux.dynasties.init.ModBlocks;
 import com.maestreaux.dynasties.world.Zone;
 import com.maestreaux.dynasties.world.blocks.Tent;
 import com.maestreaux.dynasties.world.entities.ai.brain.behaviour.*;
+import com.maestreaux.dynasties.world.entities.ai.brain.schedule.BasicSchedule;
 import com.maestreaux.dynasties.world.entities.ai.brain.sensor.*;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -15,6 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AnimationState;
@@ -26,6 +28,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -39,9 +42,11 @@ import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
 import net.tslat.smartbrainlib.api.core.behaviour.FirstApplicableBehaviour;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.look.LookAtTarget;
+import net.tslat.smartbrainlib.api.core.behaviour.custom.move.InteractWithDoor;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.move.MoveToWalkTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.target.SetPlayerLookTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.target.TargetOrRetaliate;
+import net.tslat.smartbrainlib.api.core.schedule.SmartBrainSchedule;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
 import net.tslat.smartbrainlib.api.core.sensor.custom.NearbyItemsSensor;
 import net.tslat.smartbrainlib.api.core.sensor.vanilla.HurtBySensor;
@@ -50,7 +55,9 @@ import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyPlayersSensor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
+@SuppressWarnings("unchecked")
 public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
     private static final EntityDataAccessor<Boolean> IS_FLEEING = SynchedEntityData.defineId(DynastiesVillager.class, EntityDataSerializers.BOOLEAN);
     private static final List<Item> DESIRED_ITEMS;
@@ -76,7 +83,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     }
 
     @Override
-    protected void customServerAiStep() {
+    protected void customServerAiStep(@NotNull ServerLevel level) {
         tickBrain(this);
     }
 
@@ -84,9 +91,9 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return Mob.createMobAttributes().add(Attributes.MOVEMENT_SPEED, 0.5).add(Attributes.FOLLOW_RANGE, 48.0);
     }
 
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(IS_FLEEING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder synchedData) {
+        super.defineSynchedData(synchedData);
+        synchedData.define(IS_FLEEING, false);
     }
 
     @Override
@@ -115,9 +122,9 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     }
 
     private void setPosToBed(BlockPos blockPos, boolean isTent, Direction direction) {
-        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ?  0.2300D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
+        var offset = new Vec3(0.5D + (direction.getStepX() * 0.5D), isTent ?  0.6875D : 0.6875D, 0.5D + (direction.getStepZ() * 0.5D));
 
-        this.setPos(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
+        this.setPos(blockPos.getX(), blockPos.getY() + offset.y, blockPos.getZ());
     }
 
     @Override
@@ -129,13 +136,13 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         BlockState blockstate = this.level().getBlockState(pPos);
         if (blockstate.isBed(this.level(), pPos, this)) {
             blockstate.setBedOccupied(this.level(), pPos, this, true);
-
-            this.setPose(Pose.SLEEPING);
-            this.setPosToBed(pPos, blockstate.is(ModBlocks.TENT.get()), blockstate.getValue(Tent.FACING));
-            this.setSleepingPos(pPos);
-            this.setDeltaMovement(Vec3.ZERO);
-            this.hasImpulse = true;
         }
+
+        this.setPose(Pose.SLEEPING);
+        this.setPosToBed(pPos, blockstate.is(ModBlocks.TENT.get()), blockstate.getValue(Tent.FACING));
+        this.setSleepingPos(pPos);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.hasImpulse = true;
     }
 
     @Override
@@ -148,7 +155,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack pStack) {
+    public boolean wantsToPickUp(ServerLevel level, ItemStack pStack) {
         var item = pStack.getItem();
 
         return Dictionaries.VALID_SEEDS.contains(item) || DESIRED_ITEMS.contains(item);
@@ -165,8 +172,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
                 new FarmlandsSensor<>(),
                 new FullyGrownCropsSensor<>(),
                 new NearbyItemsSensor<>(),
-                new NearbyPlayersSensor<>()
-                //new AvailableTentsSensor<>()
+                new NearbyPlayersSensor<>(),
+                new AvailableTentsSensor<>()
         );
     }
 
@@ -175,12 +182,8 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.idleTasks(
                 new ClaimPlot<>(),
                 //new GoHome<>(),
-                //new SleepInTent<>(),
                 new TargetOrRetaliate<>(),
-                new DoConstruction<>(),
-                new FetchSeeds<>(),
-                new FirstApplicableBehaviour<DynastiesVillager>(new HarvestCrops<>(), new PlantCrops<>()),
-                new StockWares<>()
+                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>())
         );
     }
 
@@ -189,9 +192,38 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
         return BrainActivityGroup.coreTasks(
                 new SetPlayerLookTarget<>(),
                 new LookAtTarget<>(),
-                new MoveToWalkTarget<>(),
-                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>())
+                new InteractWithDoor<>().holdDoorsOpenFor((entity, living, doorPos) -> false),
+                new MoveToWalkTarget<>()
         );
+    }
+
+    private BrainActivityGroup<DynastiesVillager> getWorkTasks() {
+        return new BrainActivityGroup<DynastiesVillager>(Activity.WORK).priority(1).behaviours(
+                new DoConstruction<>(),
+                new FetchSeeds<>(),
+                new FirstApplicableBehaviour<>(new HarvestCrops<>(), new PlantCrops<>()),
+                new StockWares<>()
+        );
+    }
+
+    private BrainActivityGroup<DynastiesVillager> getRestTasks() {
+        return new BrainActivityGroup<DynastiesVillager>(Activity.REST).priority(1).behaviours(
+                new SleepInTent<>()
+        );
+    }
+
+
+    @Override
+    public Map<Activity, BrainActivityGroup<? extends DynastiesVillager>> getAdditionalTasks() {
+        return Map.of(
+                Activity.WORK, getWorkTasks(),
+                Activity.REST, getRestTasks()
+        );
+    }
+
+    @Override
+    public SmartBrainSchedule getSchedule() {
+        return new BasicSchedule().activityAt(1000, Activity.IDLE).activityAt(5000, Activity.WORK).activityAt(11000, Activity.REST);
     }
 
 //    @Override

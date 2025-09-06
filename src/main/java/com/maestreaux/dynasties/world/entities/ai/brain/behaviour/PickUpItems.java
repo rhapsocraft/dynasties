@@ -13,7 +13,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.registry.SBLMemoryTypes;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -23,18 +23,18 @@ public class PickUpItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        var nearbyItems = BrainUtils.getMemory(entity, SBLMemoryTypes.NEARBY_ITEMS.get());
+        var nearbyItems = BrainUtil.getMemory(entity, SBLMemoryTypes.NEARBY_ITEMS.get());
 
         if (nearbyItems != null && !nearbyItems.isEmpty()) {
-            this.nearestVisibleItem = nearbyItems.stream().filter(itemEntity -> entity.wantsToPickUp(itemEntity.getItem())).filter(entity::hasLineOfSight).findFirst().orElse(null);
+            this.nearestVisibleItem = nearbyItems.stream().filter(itemEntity -> entity.wantsToPickUp((ServerLevel)entity.level(), itemEntity.getItem())).filter(entity::hasLineOfSight).findFirst().orElse(null);
 
             return true;
         } else {
-            var lookTarget = BrainUtils.getMemory(entity, MemoryModuleType.LOOK_TARGET);
+            var lookTarget = BrainUtil.getMemory(entity, MemoryModuleType.LOOK_TARGET);
 
             if (lookTarget instanceof EntityTracker entityTracker) {
                 if (entityTracker.getEntity() instanceof ItemEntity itemEntity && !itemEntity.isAlive()) {
-                    BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
+                    BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
                 }
             }
 
@@ -44,8 +44,8 @@ public class PickUpItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
     protected void start(E entity) {
         if (this.nearestVisibleItem != null) {
-            BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new EntityTracker(nearestVisibleItem, true));
-            BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(nearestVisibleItem, false), 0.6F, 0));
+            BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new EntityTracker(nearestVisibleItem, true));
+            BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(nearestVisibleItem, false), 0.6F, 0));
         }
     }
 

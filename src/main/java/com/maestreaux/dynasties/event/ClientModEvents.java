@@ -3,7 +3,7 @@ package com.maestreaux.dynasties.event;
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.client.model.DynastiesVillagerModel;
 import com.maestreaux.dynasties.client.model.TentModel;
-import com.maestreaux.dynasties.client.renderer.DynastyVillagerRenderer;
+import com.maestreaux.dynasties.client.renderer.entity.DynastiesVillagerRenderer;
 import com.maestreaux.dynasties.client.renderer.TentRenderer;
 import com.maestreaux.dynasties.init.ModBlockEntityTypes;
 import com.maestreaux.dynasties.init.ModEntityTypes;
@@ -16,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ClientModEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(ModEntityTypes.DYNASTY_VILLAGER.get(), DynastyVillagerRenderer::new);
+        event.registerEntityRenderer(ModEntityTypes.DYNASTY_VILLAGER.get(), DynastiesVillagerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntityTypes.TENT_BE.get(), TentRenderer::new);
     }
 

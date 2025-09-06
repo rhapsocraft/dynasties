@@ -18,11 +18,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TentRenderer<T extends TentBlockEntity> implements BlockEntityRenderer<TentBlockEntity> {
-    private static final ResourceLocation TENT_TEXTURE = new ResourceLocation(DynastiesMod.MODID, "textures/entity/tent.png");
+    private static final ResourceLocation TENT_TEXTURE = ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, "textures/entity/tent.png");
     private TentModel model;
 
     public TentRenderer(BlockEntityRendererProvider.Context context) {
-        this.model = new TentModel<>(context.bakeLayer(TentModel.LAYER_LOCATION));
+        this.model = new TentModel(context.bakeLayer(TentModel.LAYER_LOCATION));
     }
 
     public ResourceLocation getTextureLocation(TentBlockEntity pEntity) {
@@ -49,6 +49,6 @@ public class TentRenderer<T extends TentBlockEntity> implements BlockEntityRende
 
         this.model.root().z = 5F;
         this.model.root().yRot = (float) Math.PI;
-        this.model.renderToBuffer(poseStack, vertexConsumer, i, i1, 1.0F, 1.0F, 1.0F, 1.0F);
+        this.model.renderToBuffer(poseStack, vertexConsumer, i, i1, -1);
     }
 }

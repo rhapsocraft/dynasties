@@ -2,21 +2,27 @@ package com.maestreaux.dynasties.world.items.debug;
 
 import com.maestreaux.dynasties.core.utils.PlotUtils;
 import com.maestreaux.dynasties.network.PacketHandler;
-import com.maestreaux.dynasties.network.ZonePacket;
+import com.maestreaux.dynasties.network.message.CAddPlot;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.SimpleFoiledItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import org.jetbrains.annotations.NotNull;
 
-public class DebugPlottingToolItem extends SimpleFoiledItem {
+public class DebugPlottingToolItem extends Item {
     private BlockPos currentPlotStartPos;
 
-    public DebugPlottingToolItem(Properties pProperties) {
+    public DebugPlottingToolItem(Item.Properties pProperties) {
         super(pProperties);
+    }
+
+    @Override
+    public boolean isFoil(ItemStack pStack) {
+        return true;
     }
 
     @Override
@@ -44,7 +50,7 @@ public class DebugPlottingToolItem extends SimpleFoiledItem {
 
                         PlotUtils.debugSetPartitions(newPlot);
 
-                        var addPlotPacket = new ZonePacket.CAddPlotPacket(parentZone.getUUID(), startPosOffset, endPosOffset, newPlot.getPartitions());
+                        var addPlotPacket = new CAddPlot(parentZone, newPlot);
                         PacketHandler.sendToAll(addPlotPacket);
                     }
 

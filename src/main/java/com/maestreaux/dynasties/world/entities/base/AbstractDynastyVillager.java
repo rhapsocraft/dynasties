@@ -6,10 +6,8 @@ import com.maestreaux.dynasties.init.ModEntityTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
-import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
@@ -18,7 +16,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,17 +46,19 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         this.setCanPickUpLoot(true);
     }
 
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(TRADE_OFFERS, new ArrayList<>());
+    protected void defineSynchedData(SynchedEntityData.Builder synchedData) {
+        super.defineSynchedData(synchedData);
+        synchedData.define(TRADE_OFFERS, new ArrayList<>());
     }
 
     public void setTradeOffers(List<MarketAgent.TradeOffer> newList) {
-        this.entityData.set(TRADE_OFFERS, newList);
+        this.entityData.set(TRADE_OFFERS, newList, true);
     }
 
     public void updateTradeOffers() {
-        var offersList = this.agent.getActiveOffers().values().stream().toList();
+        var offersList = this.agent.getActiveOffers().values().stream()
+                .filter(offer -> !offer.getItemOffered().isEmpty()).toList();
+
         this.setTradeOffers(offersList);
     }
 
@@ -117,19 +119,20 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
     }
 
     @Override
-    protected void dropEquipment() {
-        super.dropEquipment();
+    protected void dropEquipment(ServerLevel level) {
+        super.dropEquipment(level);
 
         var itemsRemoved = this.inventory.removeAllItems();
         itemsRemoved.addAll(this.tradeInventory.removeAllItems());
 
         for (var item: itemsRemoved) {
-            this.spawnAtLocation(item);
+            this.spawnAtLocation(level, item);
         }
     }
 
-    protected void pickUpItem(ItemEntity pItemEntity) {
-        InventoryCarrier.pickUpItem(this, this, pItemEntity);
+    @Override
+    protected void pickUpItem(ServerLevel level, ItemEntity pItemEntity) {
+        InventoryCarrier.pickUpItem(level, this, this, pItemEntity);
     }
 
     @Override

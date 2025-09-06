@@ -10,7 +10,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -22,13 +22,13 @@ public class GoHome<E extends AbstractDynastyVillager> extends ExtendedBehaviour
         var homePartition = this.homePlot.getHomePartition();
 
         if (homePartition != null) {
-            BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(homePartition.getAbsoluteCenter(),0.6F,1));
+            BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(homePartition.getAbsoluteCenter(),0.6F,1));
         }
     }
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        this.homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        this.homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         return homePlot != null;
     }

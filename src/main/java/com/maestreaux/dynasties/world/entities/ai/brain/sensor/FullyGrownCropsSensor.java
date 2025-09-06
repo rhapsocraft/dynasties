@@ -12,7 +12,7 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,7 +23,7 @@ public class FullyGrownCropsSensor<E extends AbstractDynastyVillager> extends Ex
 
     protected void doTick(ServerLevel level, E entity) {
         var crops = new ArrayList<BlockPos>();
-        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        var homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
             var partitions = homePlot.getPartitionsByType(Partition.PartitionType.GARDEN);
@@ -42,10 +42,10 @@ public class FullyGrownCropsSensor<E extends AbstractDynastyVillager> extends Ex
             }
 
             if (crops.isEmpty()) {
-                BrainUtils.clearMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get());
+                BrainUtil.clearMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get());
             } else {
                 crops.sort(Comparator.comparingDouble(crop -> entity.distanceToSqr(crop.getCenter())));
-                BrainUtils.setMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get(), crops);
+                BrainUtil.setMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get(), crops);
             }
         }
     }

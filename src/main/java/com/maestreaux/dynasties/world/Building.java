@@ -1,13 +1,17 @@
 package com.maestreaux.dynasties.world;
 
+import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.init.ModBuildings;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 import java.io.IOException;
-import java.util.List;
 
 public class Building {
     private final ResourceLocation blueprint;
@@ -16,7 +20,7 @@ public class Building {
 
     public Building(String name, String resourcePath) {
         this.name = name;
-        this.blueprint = new ResourceLocation("villagerdynasties", resourcePath);
+        this.blueprint = ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, resourcePath);
     }
 
     public String getName() {
@@ -32,9 +36,9 @@ public class Building {
 
         if (resource.isPresent()) {
             try {
-                var buildingTag = NbtIo.readCompressed(resource.get().open());
+                var buildingTag = NbtIo.readCompressed(resource.get().open(), NbtAccounter.unlimitedHeap());
                 var newTemplate = new StructureTemplate();
-                newTemplate.load(BuiltInRegistries.BLOCK.asLookup(), buildingTag);
+                newTemplate.load(server.registryAccess().lookupOrThrow(Registries.BLOCK), buildingTag);
 
                 this.template = newTemplate;
             } catch (IOException e) {

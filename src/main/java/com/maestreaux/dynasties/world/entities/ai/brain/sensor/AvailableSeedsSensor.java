@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public class AvailableSeedsSensor<E extends AbstractDynastyVillager> extends Ext
     private static final List<MemoryModuleType<?>> MEMORIES;
 
     protected void doTick(ServerLevel level, E entity) {
-        var containers = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
+        var containers = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
         var itemLocations = new ArrayList<ItemLocation>();
 
         if (containers != null) {
@@ -43,9 +43,9 @@ public class AvailableSeedsSensor<E extends AbstractDynastyVillager> extends Ext
         }
 
         if (itemLocations.isEmpty()) {
-            BrainUtils.clearMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get());
+            BrainUtil.clearMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get());
         } else {
-            BrainUtils.setMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get(), itemLocations);
+            BrainUtil.setMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get(), itemLocations);
         }
     }
 

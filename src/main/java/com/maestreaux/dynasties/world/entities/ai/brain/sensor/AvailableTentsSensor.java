@@ -13,11 +13,11 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.api.core.sensor.PredicateSensor;
-import net.tslat.smartbrainlib.registry.SBLMemoryTypes;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.object.SquareRadius;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.Iterator;
 import java.util.List;
@@ -46,12 +46,21 @@ public class AvailableTentsSensor<E extends AbstractDynastyVillager> extends Ext
                     blocks.add(Pair.of(pos.immutable(), state));
                 }
             }
+        } else {
+            SquareRadius radius = new SquareRadius(6.0F, 6.0F);
 
-            if (blocks.isEmpty()) {
-                BrainUtils.clearMemory(entity, ModMemoryTypes.AVAILABLE_TENT.get());
-            } else {
-                BrainUtils.setMemory(entity, ModMemoryTypes.AVAILABLE_TENT.get(), blocks.get(0).getFirst());
+            for(BlockPos pos : BlockPos.betweenClosed(entity.blockPosition().subtract(radius.toVec3i()), entity.blockPosition().offset(radius.toVec3i()))) {
+                BlockState state = level.getBlockState(pos);
+                if (state.is(ModBlocks.TENT.get()) && !state.getValue(BedBlock.OCCUPIED)) {
+                    blocks.add(Pair.of(pos.immutable(), state));
+                }
             }
+        }
+
+        if (blocks.isEmpty()) {
+            BrainUtil.clearMemory(entity, ModMemoryTypes.AVAILABLE_TENT.get());
+        } else {
+            BrainUtil.setMemory(entity, ModMemoryTypes.AVAILABLE_TENT.get(), blocks.get(0).getFirst());
         }
     }
 

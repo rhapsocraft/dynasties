@@ -9,7 +9,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.level.block.Mirror;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -17,17 +17,20 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
 
     protected void start(E entity) {
-        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        var homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
             var partitionToBuildOn = homePlot.getPartitionToBuildOn();
 
             if (partitionToBuildOn != null && !partitionToBuildOn.isConstructionFinished()) {
-                var blockToPlaceInfo = partitionToBuildOn.getBlocks().get(partitionToBuildOn.getConstructionCursor());
-                var blockState = blockToPlaceInfo.state().rotate(partitionToBuildOn.getRotation());
 
+
+                var blockToPlaceInfo = partitionToBuildOn.getBlocks().get(partitionToBuildOn.getConstructionCursor());
                 var zeroPos = partitionToBuildOn.getBuilding().getTemplate().getZeroPositionWithTransform(blockToPlaceInfo.pos().rotate(partitionToBuildOn.getRotation()), Mirror.NONE, partitionToBuildOn.getRotation());
                 var blockPos = zeroPos.offset(partitionToBuildOn.getAbsoluteOrigin());
+
+                var blockState = blockToPlaceInfo.state().rotate(entity.level(), blockPos, partitionToBuildOn.getRotation());
+
 
                 if(entity.level().setBlock(blockPos, blockState, 3)) {
                     this.cooldownFor((e) -> 10);
@@ -41,7 +44,7 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
     }
 
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        var homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
             var partitionToBuildOn = homePlot.getPartitionToBuildOn();

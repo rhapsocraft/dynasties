@@ -1,6 +1,5 @@
 package com.maestreaux.dynasties.world.entities.ai.brain.behaviour;
 
-import com.maestreaux.dynasties.core.MarketAgent;
 import com.maestreaux.dynasties.core.utils.InventoryUtils;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
@@ -12,7 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 import java.util.Set;
@@ -29,7 +28,7 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
     }
 
     protected void start(E entity) {
-        var containers = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
+        var containers = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
 
         var marketAgent = entity.asMarketAgent();
         var activeOffers = marketAgent.getActiveOffers();
@@ -41,11 +40,11 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
             var itemLocationsMap = InventoryUtils.getItemLocations(containers, WARES);
 
             // Find all locations of sellable items
-            for(var itemToSell : itemLocationsMap.keySet()) {
+            for (var itemToSell : itemLocationsMap.keySet()) {
                 var itemLocations = itemLocationsMap.get(itemToSell);
 
                 // See if we should sell items
-                for(var itemLocation: itemLocations) {
+                for (var itemLocation : itemLocations) {
                     var itemInLocation = itemLocation.stack.getItem();
                     var canAddItem = tradeInventory.canAddItem(itemLocation.stack);
 
@@ -54,7 +53,8 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
 
                         if (itemSlot != -1) {
                             var itemStackInSlot = tradeInventory.getItem(itemSlot);
-                            var stackSizeRemaining = itemStackInSlot.getMaxStackSize() - itemStackInSlot.getCount();
+
+                            var stackSizeRemaining = itemStackInSlot == ItemStack.EMPTY ?  itemToSell.getDefaultMaxStackSize() : itemStackInSlot.getMaxStackSize() - itemStackInSlot.getCount();
 
                             // We have no storage for this item. Evaluate next item
                             if (stackSizeRemaining == 0) {
@@ -71,7 +71,7 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
                                 itemStackInSlot.grow(amountToAdd);
                             }
 
-                            marketAgent.increaseOfferStock(itemToSell, amountToAdd);
+                            marketAgent.updateStock(tradeInventory.getItem(itemSlot), amountToAdd);
                             // activeItemOffer.setQuantity(activeItemOffer.getQuantityOffered() + amountToAdd);
                         }
                     } else {

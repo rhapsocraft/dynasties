@@ -13,22 +13,19 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
-import net.minecraft.world.phys.Vec3;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-
-import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
 
 
 public class HomeContainersSensor<E extends AbstractDynastyVillager> extends ExtendedSensor<E> {
     private static final List<MemoryModuleType<?>> MEMORIES;
 
     protected void doTick(ServerLevel level, E entity) {
-        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+        var homePlot = BrainUtil.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
 
         if (homePlot != null) {
             // TODO: HEIGHT TEMPORARY AND MAKE VALID CONTAINERS CONFIGURABLE
@@ -40,9 +37,9 @@ public class HomeContainersSensor<E extends AbstractDynastyVillager> extends Ext
             ).sorted(Comparator.comparingDouble(inventory -> entity.distanceToSqr(inventory.getBlockPos().getCenter()))).toList();
 
             if (inventories.isEmpty()) {
-                BrainUtils.clearMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
+                BrainUtil.clearMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get());
             } else {
-                BrainUtils.setMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get(), inventories);
+                BrainUtil.setMemory(entity, ModMemoryTypes.HOME_CONTAINERS.get(), inventories);
             }
         }
     }

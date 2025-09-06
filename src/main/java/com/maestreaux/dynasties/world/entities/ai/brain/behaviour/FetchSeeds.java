@@ -13,7 +13,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class FetchSeeds<E extends AbstractDynastyVillager> extends ExtendedBehav
     private ItemLocation targetSeed = null;
 
     protected void start(E entity) {
-        var seedLocations = BrainUtils.getMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get());
+        var seedLocations = BrainUtil.getMemory(entity, ModMemoryTypes.AVAILABLE_SEEDS.get());
 
         if (seedLocations != null) {
             if (this.targetSeed != null) {
@@ -34,13 +34,13 @@ public class FetchSeeds<E extends AbstractDynastyVillager> extends ExtendedBehav
                     entity.getInventory().addItem(extractedSeeds);
                     this.targetSeed = null;
                 } else {
-                    BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
-                    BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
+                    BrainUtil.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+                    BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
                 }
             } else {
                 this.targetSeed = seedLocations.get(0);
-                BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
-                BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
             }
         }
     }

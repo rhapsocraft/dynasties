@@ -1,19 +1,24 @@
 package com.maestreaux.dynasties.world;
 
 import com.maestreaux.dynasties.network.PacketHandler;
-import com.maestreaux.dynasties.network.ZonePacket;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
+import com.maestreaux.dynasties.network.message.CAddZone;
+import net.minecraft.core.*;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -21,9 +26,11 @@ import java.util.List;
 import java.util.UUID;
 
 public class Zone {
+    public static StreamCodec<RegistryFriendlyByteBuf, Zone> STREAM_CODEC;
+
     private BlockPos center;
     private AABB boundingBox;
-    private final List<Plot> plots = new ArrayList<>();
+    private List<Plot> plots = new ArrayList<>();
     protected final RandomSource random = RandomSource.create();
     protected UUID uuid = Mth.createInsecureUUID(this.random);
     private final Level level;
@@ -35,6 +42,11 @@ public class Zone {
         this.dimension = dimension;
         this.uuid = uuid;
         this.setCenter(center);
+    }
+
+    public Zone(UUID uuid, BlockPos center, ResourceKey<Level> dimension, List<Plot> plots) {
+        this(uuid, center, dimension);
+        plots.forEach(this::addPlot);
     }
 
     public Zone(Level level) {
@@ -54,7 +66,7 @@ public class Zone {
 
     public static void add(ServerLevel level, Zone newZone) {
         ZoneSavedData.addZone(level, newZone);
-        PacketHandler.sendToAll(new ZonePacket.CAddZonePacket(newZone));
+        PacketHandler.sendToAll(new CAddZone(newZone));
     }
 
     public static void add(Zone newZone) {
@@ -81,7 +93,7 @@ public class Zone {
             this.center = newCenter;
             var startPos = this.center.subtract(new Vec3i(16, 4,  16));
             var endPos = this.center.subtract(new Vec3i(-16, -12, -16));
-            this.boundingBox = new AABB(startPos, endPos);
+            this.boundingBox = new AABB(Vec3.atLowerCornerOf(startPos), Vec3.atLowerCornerOf(endPos));
     }
 
     public Level level() {
@@ -114,6 +126,7 @@ public class Zone {
         return ZoneSavedData.getZones(level).stream().filter(zone -> uuid.equals(zone.getUUID())).findFirst().orElse(null);
     }
 
+
     public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type, int numSlots) {
         var newPlot = new Plot(startPos, endPos, type);
         newPlot.setParentZone(this);
@@ -133,6 +146,12 @@ public class Zone {
 
     public Plot addPlot(BlockPos startPos, BlockPos endPos, Plot.PlotType type) {
         return this.addPlot(startPos, endPos, type, 0);
+    }
+
+    public void addPlot(Plot plot) {
+        // Client-side method. No need to encode other params at the moment
+        plot.setParentZone(this);
+        this.plots.add(plot);
     }
 
     public Plot getPlotByUUID(UUID plotUUID) {
@@ -170,8 +189,8 @@ public class Zone {
     }
 
     public Plot nbtReadPlot(CompoundTag plotTag) {
-        var plotStartPos = NbtUtils.readBlockPos(plotTag.getCompound("villagerdynasties:plot_start"));
-        var plotEndPos = NbtUtils.readBlockPos(plotTag.getCompound("villagerdynasties:plot_end"));
+        var plotStartPos = NbtUtils.readBlockPos(plotTag, "villagerdynasties:plot_start").orElse(null);
+        var plotEndPos = NbtUtils.readBlockPos(plotTag, "villagerdynasties:plot_end").orElse(null);
         var plotType = Plot.PlotType.valueOf(plotTag.getString("villagerdynasties:plot_type"));
 
         return new Plot(plotStartPos, plotEndPos, plotType);
@@ -194,7 +213,7 @@ public class Zone {
     }
 
     public void load(CompoundTag compoundTag) {
-        this.setCenter(NbtUtils.readBlockPos(compoundTag.getCompound("villagerdynasties:zone_center")));
+        this.setCenter(NbtUtils.readBlockPos(compoundTag, "villagerdynasties:zone_center").orElse(null));
         var listTag = (ListTag) compoundTag.get("villagerdynasties:zone_plots");
 
         if (listTag != null) {
@@ -211,6 +230,8 @@ public class Zone {
         if (compoundTag.hasUUID("villagerdynasties:zone_uuid")) {
             this.uuid = compoundTag.getUUID("villagerdynasties:zone_uuid");
         }
+
+
     }
 
     public static class ZoneSavedData extends SavedData {
@@ -251,7 +272,7 @@ public class Zone {
         }
 
         @Override
-        public @NotNull CompoundTag save(@NotNull CompoundTag compoundTag) {
+        public @NotNull CompoundTag save(@NotNull CompoundTag compoundTag, HolderLookup.@NotNull Provider var2) {
             var zoneList = new ListTag();
 
             for(var zone: this.zones) {
@@ -270,8 +291,12 @@ public class Zone {
         }
 
         public static ZoneSavedData getInstance(ServerLevel serverLevel) {
-            return serverLevel.getDataStorage().computeIfAbsent(((compoundTag) -> ZoneSavedData.load(serverLevel, compoundTag)), ZoneSavedData::create, "zone");
+            return serverLevel.getDataStorage().computeIfAbsent(new Factory<ZoneSavedData>(ZoneSavedData::create, (compoundTag, provider) -> ZoneSavedData.load(serverLevel, compoundTag), DataFixTypes.LEVEL), "zone");
         }
 
+    }
+
+    static {
+        STREAM_CODEC = StreamCodec.composite(UUIDUtil.STREAM_CODEC, Zone::getUUID, BlockPos.STREAM_CODEC, Zone::getCenter, ResourceKey.streamCodec(Registries.DIMENSION), Zone::dimension, Plot.STREAM_CODEC.apply(ByteBufCodecs.list()), Zone::getPlots, Zone::new);
     }
 }

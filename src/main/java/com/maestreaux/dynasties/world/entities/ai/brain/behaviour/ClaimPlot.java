@@ -8,7 +8,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ public class ClaimPlot<E extends AbstractDynastyVillager> extends ExtendedBehavi
     private static final List<Pair<MemoryModuleType<?>, MemoryStatus>> MEMORY_REQUIREMENTS;
 
     protected void start(E entity) {
-        var availablePlots = BrainUtils.getMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get());
+        var availablePlots = BrainUtil.getMemory(entity, ModMemoryTypes.AVAILABLE_PLOTS.get());
 
         if (availablePlots != null) {
             availablePlots.stream().filter(plot -> plot.getType() == Plot.PlotType.RESIDENTIAL).findFirst().ifPresent(entity::occupyPlot);

@@ -3,8 +3,7 @@ package com.maestreaux.dynasties.event;
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.init.ModBuildings;
 import com.maestreaux.dynasties.network.PacketHandler;
-import com.maestreaux.dynasties.network.ZonePacket;
-import com.maestreaux.dynasties.world.Building;
+import com.maestreaux.dynasties.network.message.CZonesList;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,7 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = DynastiesMod.MODID)
 public class GeneralModEvents {
     private static void sendZonesListPacket(ServerLevel level, ServerPlayer player) {
-        ZonePacket.CZonesPacket packet = new ZonePacket.CZonesPacket(Zone.getZones(level));
+        var packet = new CZonesList(Zone.getZones(level));
         PacketHandler.sendToPlayer(packet, player);
     }
     @SubscribeEvent

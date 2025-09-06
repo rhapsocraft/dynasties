@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.common.Mod;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
-import net.tslat.smartbrainlib.util.BrainUtils;
+import net.tslat.smartbrainlib.util.BrainUtil;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
     private BlockPos targetCrop;
 
     protected void start(E entity) {
-        var readyCrops = BrainUtils.getMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get());
+        var readyCrops = BrainUtil.getMemory(entity, ModMemoryTypes.FULLY_GROWN_CROPS.get());
 
         if (readyCrops != null && !readyCrops.isEmpty()) {
             if (this.targetCrop != null) {
@@ -49,7 +49,7 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
                     entity.level().destroyBlock(this.targetCrop, false, entity);
                     this.targetCrop = null;
                 } else {
-                    BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetCrop, 0.6F, 1));
+                    BrainUtil.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetCrop, 0.6F, 1));
                 }
             } else {
                 var cropToGet = readyCrops.get(0);
@@ -59,7 +59,7 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
                     this.targetCrop = readyCrops.get(0);
                 }
 
-                BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                BrainUtil.clearMemory(entity, MemoryModuleType.WALK_TARGET);
             }
         }
     }

@@ -5,10 +5,9 @@ package com.maestreaux.dynasties.client.model;// Made with Blockbench 4.11.2
 
 import com.maestreaux.dynasties.DynastiesMod;
 import com.maestreaux.dynasties.client.animation.DynastiesVillagerAnimation;
-import com.maestreaux.dynasties.world.entities.DynastiesVillager;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.HierarchicalModel;
+import com.maestreaux.dynasties.client.renderer.entity.state.DynastiesVillagerRenderState;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -17,9 +16,9 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-public class DynastiesVillagerModel<T extends DynastiesVillager> extends HierarchicalModel<DynastiesVillager> {
+public class DynastiesVillagerModel extends EntityModel<DynastiesVillagerRenderState> implements HeadedModel {
     // This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(DynastiesMod.MODID, "dynastiesvillager"), "main");
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(DynastiesMod.MODID, "dynastiesvillager"), "main");
     private final ModelPart root;
     private final ModelPart villager;
     private final ModelPart body;
@@ -46,6 +45,7 @@ public class DynastiesVillagerModel<T extends DynastiesVillager> extends Hierarc
     private final ModelPart LeftKnee;
 
     public DynastiesVillagerModel(ModelPart rootPart) {
+        super(rootPart);
         this.root = rootPart.getChild("root");
         this.villager = this.root.getChild("villager");
         this.body = this.villager.getChild("body");
@@ -138,27 +138,28 @@ public class DynastiesVillagerModel<T extends DynastiesVillager> extends Hierarc
     }
 
     @Override
-    public void setupAnim(DynastiesVillager entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        root.getAllParts().forEach(ModelPart::resetPose);
+    public void setupAnim(DynastiesVillagerRenderState renderState) {
+        super.setupAnim(renderState);
+        // root.getAllParts().forEach(ModelPart::resetPose);
 
-        applyHeadRotation(netHeadYaw, headPitch, ageInTicks);
+        applyHeadRotation(renderState.yRot, renderState.xRot);
 
-        animate(entity.idleFaceAnimationState, DynastiesVillagerAnimation.FACE_1, ageInTicks);
-        animate(entity.idleAnimationState, DynastiesVillagerAnimation.IDLE1, ageInTicks, 0.5F);
+        animate(renderState.idleFaceAnimationState, DynastiesVillagerAnimation.FACE_1, renderState.ageInTicks);
+        animate(renderState.idleAnimationState, DynastiesVillagerAnimation.IDLE1, renderState.ageInTicks, 0.5F);
 
-        if (entity.isFleeing()) {
-            animateWalk(DynastiesVillagerAnimation.FLEE, limbSwing, limbSwingAmount, 2.5F, 2.5F);
-            animateWalk(DynastiesVillagerAnimation.FLEE_ARMS, limbSwing, limbSwingAmount, 2.5F, 2.5F);
+        if (renderState.isFleeing) {
+            animateWalk(DynastiesVillagerAnimation.FLEE, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2.5F, 2.5F);
+            animateWalk(DynastiesVillagerAnimation.FLEE_ARMS, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 2.5F, 2.5F);
         } else {
-            animateWalk(DynastiesVillagerAnimation.WALK, limbSwing, limbSwingAmount, 1.5F, 2.5F);
-            animateWalk(DynastiesVillagerAnimation.WALK_ARMS, limbSwing, limbSwingAmount, 1.5F, 2.5F);
+            animateWalk(DynastiesVillagerAnimation.WALK, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 1.5F, 2.5F);
+            animateWalk(DynastiesVillagerAnimation.WALK_ARMS, renderState.walkAnimationPos, renderState.walkAnimationSpeed, 1.5F, 2.5F);
         }
 
-        this.toggleArms(entity.idleAnimationState.isStarted());
+        this.toggleArms(renderState.idleAnimationState.isStarted());
 
     }
 
-    private void applyHeadRotation(float pNetHeadYaw, float pHeadPitch, float pAgeInTicks) {
+    private void applyHeadRotation(float pNetHeadYaw, float pHeadPitch) {
         float sinYaw = Mth.sin(pNetHeadYaw * ((float)Math.PI / 180F));
         float cosPitch = Mth.cos(pHeadPitch * ((float)Math.PI / 180F)) - 1.0472F;
 
@@ -182,12 +183,7 @@ public class DynastiesVillagerModel<T extends DynastiesVillager> extends Hierarc
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.root.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
-    }
-
-    @Override
-    public @NotNull ModelPart root() {
-        return this.root;
+    public @NotNull ModelPart getHead() {
+        return this.head;
     }
 }

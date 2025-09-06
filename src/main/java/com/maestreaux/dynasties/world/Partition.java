@@ -4,6 +4,9 @@ import com.maestreaux.dynasties.init.ModBuildings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -16,6 +19,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 public class Partition {
+    public static StreamCodec<RegistryFriendlyByteBuf, Partition> STREAM_CODEC;
+
     private BlockPos origin = BlockPos.ZERO;
     private int length;
     private int width;
@@ -48,7 +53,7 @@ public class Partition {
     public Partition(BlockPos relativeOrigin, int width, int length) {
         this.length = length;
         this.width = width;
-        setOrigin(relativeOrigin);
+        this.setOrigin(relativeOrigin);
     }
 
     public Partition(BlockPos relativeOrigin, int width, int length, PartitionType type, Building building) {
@@ -163,17 +168,21 @@ public class Partition {
 
     public void load(CompoundTag compoundTag) {
         this.constructionCursor = compoundTag.getInt("villagerdynasties:construction_cursor");
-        this.origin = NbtUtils.readBlockPos(compoundTag.getCompound("villagerdynasties:partition_origin"));
+        this.origin = NbtUtils.readBlockPos(compoundTag, "villagerdynasties:partition_origin").orElse(null);
         this.width = compoundTag.getInt("villagerdynasties:partition_width");
         this.length = compoundTag.getInt("villagerdynasties:partition_length");
         this.type = PartitionType.valueOf(compoundTag.getString("villagerdynasties:partition_type"));
 
-        var buildingKey = new ResourceLocation(compoundTag.getString("villagerdynasties:building"));
+        var buildingKey = ResourceLocation.parse(compoundTag.getString("villagerdynasties:building"));
         this.construction = ModBuildings.BUILDINGS_REGISTRY.get().getValue(buildingKey);
     }
 
     public enum PartitionType {
         HOME,
         GARDEN,
+    }
+
+    static {
+        STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, Partition::getOrigin, ByteBufCodecs.INT, Partition::getWidth, ByteBufCodecs.INT, Partition::getLength, Partition::new);
     }
 }
