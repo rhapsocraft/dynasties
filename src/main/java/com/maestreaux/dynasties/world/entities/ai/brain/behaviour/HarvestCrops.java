@@ -6,9 +6,17 @@ import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fml.common.Mod;
 import net.tslat.smartbrainlib.api.core.behaviour.ExtendedBehaviour;
 import net.tslat.smartbrainlib.util.BrainUtils;
 
@@ -23,14 +31,34 @@ public class HarvestCrops<E extends AbstractDynastyVillager> extends ExtendedBeh
 
         if (readyCrops != null && !readyCrops.isEmpty()) {
             if (this.targetCrop != null) {
+                Level level = entity.level();
+                BlockState blockState = level.getBlockState(this.targetCrop);
+
+                // Double check if max age
                 if (AIUtils.isCloseEnoughToTarget(entity, this.targetCrop)) {
-                    entity.level().destroyBlock(this.targetCrop, true, entity);
+                    BlockEntity blockentity = blockState.hasBlockEntity() ? level.getBlockEntity(this.targetCrop) : null;
+
+                    Block.getDrops(blockState, (ServerLevel) level, this.targetCrop, blockentity, entity, ItemStack.EMPTY).forEach(itemStack -> {
+                        ItemStack itemsToDrop = entity.getInventory().addItem(itemStack);
+
+                        if (itemsToDrop != ItemStack.EMPTY) {
+                            Block.popResource(level, this.targetCrop, itemsToDrop);
+                        }
+                    });
+
+                    entity.level().destroyBlock(this.targetCrop, false, entity);
                     this.targetCrop = null;
                 } else {
                     BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetCrop, 0.6F, 1));
                 }
             } else {
-                this.targetCrop = readyCrops.get(0);
+                var cropToGet = readyCrops.get(0);
+                var cropBlockState = entity.level().getBlockState(cropToGet);
+
+                if (cropBlockState.getBlock() instanceof CropBlock crop && crop.isMaxAge(cropBlockState)) {
+                    this.targetCrop = readyCrops.get(0);
+                }
+
                 BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
             }
         }

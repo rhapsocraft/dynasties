@@ -1,11 +1,16 @@
 package com.maestreaux.dynasties.world.entities.base;
 
 import com.maestreaux.dynasties.core.MarketAgent;
+import com.maestreaux.dynasties.init.ModEntityDataSerializers;
 import com.maestreaux.dynasties.init.ModEntityTypes;
 import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.Plot;
 import com.maestreaux.dynasties.world.Zone;
+import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.AgeableMob;
@@ -22,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AbstractDynastyVillager extends AgeableMob implements InventoryCarrier {
+    protected static final EntityDataAccessor<List<MarketAgent.TradeOffer>> TRADE_OFFERS = SynchedEntityData.defineId(AbstractDynastyVillager.class, ModEntityDataSerializers.TRADE_OFFERS.get());
     protected List<Plot> occupiedPlots = new ArrayList<>();
     protected Zone homeZone;
     protected final MarketAgent agent = new MarketAgent(this);
@@ -38,6 +44,24 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
         this(ModEntityTypes.DYNASTY_VILLAGER.get(), pLevel);
         this.homeZone = homeZone;
         this.setCanPickUpLoot(true);
+    }
+
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(TRADE_OFFERS, new ArrayList<>());
+    }
+
+    public void setTradeOffers(List<MarketAgent.TradeOffer> newList) {
+        this.entityData.set(TRADE_OFFERS, newList);
+    }
+
+    public void updateTradeOffers() {
+        var offersList = this.agent.getActiveOffers().values().stream().toList();
+        this.setTradeOffers(offersList);
+    }
+
+    public List<MarketAgent.TradeOffer> getTradeOffers() {
+        return this.entityData.get(TRADE_OFFERS);
     }
 
     public Zone getHomeZone() {
@@ -90,11 +114,6 @@ public class AbstractDynastyVillager extends AgeableMob implements InventoryCarr
 
     public MarketAgent asMarketAgent() {
         return this.agent;
-    }
-
-    public List<MarketAgent.TradeOffer> getTradeOffers() {
-
-        return this.tradeSlot.keySet().stream().map((key) -> this.agent.getActiveOffers().get(key)).toList();
     }
 
     @Override

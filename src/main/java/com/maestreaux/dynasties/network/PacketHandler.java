@@ -7,7 +7,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import com.maestreaux.dynasties.network.ZonePacket.*;
-import org.lwjgl.system.windows.MSG;
+import com.maestreaux.dynasties.network.TradePacket.*;
 
 public class PacketHandler {
     private static final String PROTOCOL_VERSION = "1";
@@ -41,6 +41,12 @@ public class PacketHandler {
                 .decoder(CAddPlotPacket::new)
                 .consumerMainThread(CAddPlotPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(SBuyFromTraderPacket.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .encoder(SBuyFromTraderPacket::encode)
+                .decoder(SBuyFromTraderPacket::new)
+                .consumerMainThread(SBuyFromTraderPacket::handle)
+                .add();
     }
 
     public static void sendToAll(Object msg) {
@@ -49,5 +55,9 @@ public class PacketHandler {
 
     public static void sendToPlayer(Object msg, ServerPlayer player) {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), msg);
+    }
+
+    public static void sendToServer(Object msg) {
+        INSTANCE.sendToServer(msg);
     }
 }

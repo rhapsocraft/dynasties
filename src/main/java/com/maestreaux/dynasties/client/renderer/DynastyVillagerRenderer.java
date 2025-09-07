@@ -1,6 +1,8 @@
 package com.maestreaux.dynasties.client.renderer;
 
-import com.maestreaux.dynasties.world.entities.DynastyVillager;
+import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.client.model.DynastiesVillagerModel;
+import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.VillagerModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -14,21 +16,21 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class DynastyVillagerRenderer extends MobRenderer<DynastyVillager, VillagerModel<DynastyVillager>> {
-    private static final ResourceLocation VILLAGER_BASE_SKIN = new ResourceLocation("textures/entity/villager/villager.png");
+public class DynastyVillagerRenderer extends MobRenderer<DynastiesVillager, DynastiesVillagerModel<DynastiesVillager>> {
+    private static final ResourceLocation VILLAGER_BASE_SKIN = new ResourceLocation(DynastiesMod.MODID, "textures/entity/villager.png");
 
-    public DynastyVillagerRenderer(EntityRendererProvider.Context p_174437_) {
-        super(p_174437_, new VillagerModel<>(p_174437_.bakeLayer(ModelLayers.VILLAGER)), 0.5F);
-        this.addLayer(new CustomHeadLayer<>(this, p_174437_.getModelSet(), p_174437_.getItemInHandRenderer()));
-        this.addLayer(new VillagerProfessionLayer(this, p_174437_.getResourceManager(), "villager"));
-        this.addLayer(new CrossedArmsItemLayer(this, p_174437_.getItemInHandRenderer()));
+    public DynastyVillagerRenderer(EntityRendererProvider.Context ctx) {
+        super(ctx, new DynastiesVillagerModel<>(ctx.bakeLayer(DynastiesVillagerModel.LAYER_LOCATION)), 0.5F);
+        // this.addLayer(new CustomHeadLayer<>(this, p_174437_.getModelSet(), p_174437_.getItemInHandRenderer()));
+        // this.addLayer(new VillagerProfessionLayer(this, p_174437_.getResourceManager(), "villager"));
+        // this.addLayer(new CrossedArmsItemLayer(this, p_174437_.getItemInHandRenderer()));
     }
 
-    public ResourceLocation getTextureLocation(DynastyVillager pEntity) {
+    public ResourceLocation getTextureLocation(DynastiesVillager pEntity) {
         return VILLAGER_BASE_SKIN;
     }
 
-    protected void scale(DynastyVillager pLivingEntity, PoseStack pPoseStack, float pPartialTickTime) {
+    protected void scale(DynastiesVillager pLivingEntity, PoseStack pPoseStack, float pPartialTickTime) {
         float $$3 = 0.9375F;
         if (pLivingEntity.isBaby()) {
             $$3 *= 0.5F;

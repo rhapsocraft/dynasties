@@ -63,6 +63,12 @@ public class MarketAgent {
         }
     }
 
+    public void increaseOfferStock(Item itemToSell, int quantity) {
+        var offer = this.activeOffers.computeIfAbsent(itemToSell, (item) -> new MarketAgent.TradeOffer(this, itemToSell, 0));
+        offer.setQuantity(offer.quantityOffered + quantity);
+        this.entity.updateTradeOffers();
+    }
+
     public void updateOffer(Item item, int quantity) {
         this.adjustValuation(item);
 
@@ -83,6 +89,8 @@ public class MarketAgent {
         return this.activeOffers;
     }
 
+
+
     public void adjustValuation(Item item) {
         var activeItemOffer = this.activeOffers.get(item);
 
@@ -102,22 +110,28 @@ public class MarketAgent {
     // public float speculate() {}
 
     public static class TradeOffer {
-        private final MarketAgent agent;
+        private MarketAgent agent;
         private final Item itemOffered;
         private int quantityOffered;
         private int quantitySold = 0;
         private int priceEach;
 
-        public TradeOffer(MarketAgent agent, Item itemOffered, int quantity, int price) {
-            this.agent = agent;
+        public TradeOffer(Item itemOffered, int quantity, int quantitySold, int price) {
             this.itemOffered = itemOffered;
             this.quantityOffered = quantity;
             this.priceEach = price;
+            this.quantitySold = quantitySold;
+        }
+
+        public TradeOffer(MarketAgent agent, Item itemOffered, int quantity, int price) {
+            this(itemOffered, quantity, 0, price);
+            this.agent = agent;
         }
 
         public TradeOffer(MarketAgent agent, Item itemOffered, int quantity) {
             this(agent, itemOffered, quantity, BASE_PRICE);
         }
+
         public Item getItemOffered() {
             return this.itemOffered;
         }
@@ -130,8 +144,16 @@ public class MarketAgent {
             return this.quantitySold;
         }
 
+        public AbstractDynastyVillager getEntity() {
+            return this.agent.entity;
+        }
+
         public int getStock() {
-            return this.quantityOffered - this.quantitySold;
+            var entity = this.getEntity();
+            var offeredItemSlot = entity.getTradeSlot().get(this.getItemOffered());
+            var itemstack = entity.getTradeInventory().getItem(offeredItemSlot);
+
+            return itemstack.getCount();
         }
 
         public int getPrice() {
@@ -140,19 +162,42 @@ public class MarketAgent {
 
         public void setPrice(int newPrice) {
             this.priceEach = newPrice;
+            this.agent.entity.updateTradeOffers();
         }
 
         public void setQuantity(int quantity) {
             this.quantityOffered = quantity;
+            this.agent.entity.updateTradeOffers();
         }
 
         public int sell(int quantity) {
             int actualQuantity = Math.min(this.getStock(), quantity);
-            this.quantitySold -= actualQuantity;
 
-            var sale = this.getPrice() * actualQuantity;
-            var newBalance = this.agent.getMoney() + sale;
-            this.agent.setMoney(newBalance);
+            if (actualQuantity > 0) {
+                this.quantitySold += actualQuantity;
+
+                var sale = this.getPrice() * actualQuantity;
+                var newBalance = this.agent.getMoney() + sale;
+                this.agent.setMoney(newBalance);
+
+                var entity = this.getEntity();
+                var tradeInventory = entity.getTradeInventory();
+                var tradeSlot = entity.getTradeSlot();
+
+                // remove items from slot
+                var slot = tradeSlot.get(this.getItemOffered());
+
+                if (slot != null) {
+                    var itemstack = tradeInventory.getItem(slot);
+                    itemstack.shrink(actualQuantity);
+                }
+
+                this.agent.adjustValuation(this.itemOffered);
+                entity.updateTradeOffers();
+
+                // TODO: TEMPORARY
+                this.setPrice(Math.round(this.agent.valuations.get(this.itemOffered) * BASE_PRICE));
+            }
 
             return actualQuantity;
         }

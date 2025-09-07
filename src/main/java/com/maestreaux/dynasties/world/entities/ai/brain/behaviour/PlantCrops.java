@@ -8,6 +8,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -48,11 +49,13 @@ public class PlantCrops<E extends AbstractDynastyVillager> extends ExtendedBehav
                     this.targetFarmLand = null;
                 } else {
                     BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
+                    BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
                 }
 
             } else {
                 this.targetFarmLand = farmlands.stream().filter(farmland -> entity.level().getBlockState(farmland.above()).isAir()).findFirst().orElse(null);
                 BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
+                BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
             }
         }
     }

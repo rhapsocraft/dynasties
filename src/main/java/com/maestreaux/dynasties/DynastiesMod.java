@@ -2,7 +2,7 @@ package com.maestreaux.dynasties;
 
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.world.Zone;
-import com.maestreaux.dynasties.world.entities.DynastyVillager;
+import com.maestreaux.dynasties.world.entities.DynastiesVillager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Items;
@@ -42,6 +42,7 @@ public class DynastiesMod
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);
+        ModEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
         ModBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModSensorTypes.SENSOR_TYPES.register(modEventBus);
@@ -91,7 +92,7 @@ public class DynastiesMod
                 Zone.add(serverLevel, newZone);
 
                 for(int i = 0; i < 1; i++) {
-                    var newVillager = new DynastyVillager(serverLevel, newZone);
+                    var newVillager = new DynastiesVillager(serverLevel, newZone);
                     serverLevel.addFreshEntity(newVillager);
                     newVillager.moveTo(newZone.getCenter().above().getCenter());
                 }

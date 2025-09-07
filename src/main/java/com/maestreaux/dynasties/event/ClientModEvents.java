@@ -1,6 +1,7 @@
 package com.maestreaux.dynasties.event;
 
 import com.maestreaux.dynasties.DynastiesMod;
+import com.maestreaux.dynasties.client.model.DynastiesVillagerModel;
 import com.maestreaux.dynasties.client.model.TentModel;
 import com.maestreaux.dynasties.client.renderer.DynastyVillagerRenderer;
 import com.maestreaux.dynasties.client.renderer.TentRenderer;
@@ -22,5 +23,6 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(TentModel.LAYER_LOCATION, TentModel::createBodyLayer);
+        event.registerLayerDefinition(DynastiesVillagerModel.LAYER_LOCATION, DynastiesVillagerModel::createBodyLayer);
     }
 }

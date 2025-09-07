@@ -4,6 +4,7 @@ import com.maestreaux.dynasties.init.ModMemoryTypes;
 import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.level.block.Mirror;
@@ -37,6 +38,20 @@ public class DoConstruction<E extends AbstractDynastyVillager> extends ExtendedB
                 partitionToBuildOn.incrementConstructionCursor();
             }
         }
+    }
+
+    protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
+        var homePlot = BrainUtils.getMemory(entity, ModMemoryTypes.HOME_PLOT.get());
+
+        if (homePlot != null) {
+            var partitionToBuildOn = homePlot.getPartitionToBuildOn();
+
+            if (partitionToBuildOn != null) {
+                return !partitionToBuildOn.isConstructionFinished();
+            }
+        }
+
+        return false;
     }
 
     @Override

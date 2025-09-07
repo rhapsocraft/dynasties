@@ -61,11 +61,9 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
                                 break;
                             }
 
-                            var stackDiff = stackSizeRemaining - itemLocation.stack.getCount();
-                            var amountToAdd = Math.min(stackDiff, itemLocation.stack.getCount());
-                            var activeItemOffer = activeOffers.computeIfAbsent(itemToSell, (item) -> new MarketAgent.TradeOffer(marketAgent, itemToSell, itemStackInSlot.getCount()));
+                            var amountToAdd = Math.min(stackSizeRemaining, itemLocation.stack.getCount());
 
-                            var itemStackToAdd = itemLocation.itemHandler.extractItem(itemSlot, amountToAdd, false);
+                            var itemStackToAdd = itemLocation.itemHandler.extractItem(itemLocation.slot, amountToAdd, false);
 
                             if (itemStackInSlot.getItem() != itemToSell) {
                                 tradeInventory.setItem(itemSlot, itemStackToAdd);
@@ -73,7 +71,8 @@ public class StockWares<E extends AbstractDynastyVillager> extends ExtendedBehav
                                 itemStackInSlot.grow(amountToAdd);
                             }
 
-                            activeItemOffer.setQuantity(activeItemOffer.getQuantityOffered() + amountToAdd);
+                            marketAgent.increaseOfferStock(itemToSell, amountToAdd);
+                            // activeItemOffer.setQuantity(activeItemOffer.getQuantityOffered() + amountToAdd);
                         }
                     } else {
                         // We have no storage for this item. Evaluate next item

@@ -7,6 +7,7 @@ import com.maestreaux.dynasties.world.entities.base.AbstractDynastyVillager;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -59,7 +60,11 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
                             currentSlot = 0;
                         }
+
+                        BrainUtils.clearMemory(entity, MemoryModuleType.LOOK_TARGET);
+                        BrainUtils.clearMemory(entity, MemoryModuleType.WALK_TARGET);
                     } else {
+                        BrainUtils.setMemory(entity, MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
                         BrainUtils.setMemory(entity, MemoryModuleType.WALK_TARGET, new WalkTarget(targetPos, 0.6F, 1));
                     }
                 } else {
@@ -71,7 +76,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, E entity) {
-        return !entity.getInventory().isEmpty();
+        return !entity.getInventory().isEmpty() ;
     }
 
     @Override
@@ -82,6 +87,7 @@ public class ReturnItems<E extends AbstractDynastyVillager> extends ExtendedBeha
     static {
         MEMORY_REQUIREMENTS = ObjectArrayList.of(new Pair[]{
                 Pair.of(ModMemoryTypes.HOME_CONTAINERS.get(), MemoryStatus.VALUE_PRESENT),
+                Pair.of(ModMemoryTypes.HOME_FARMLANDS.get(), MemoryStatus.VALUE_ABSENT)
         });
     }
 }

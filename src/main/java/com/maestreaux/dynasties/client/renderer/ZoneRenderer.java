@@ -86,24 +86,26 @@ public class ZoneRenderer {
             var partitionEndPos = partitionStartPos.offset(partition.getWidth(), 0, partition.getLength());
 
             MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-            VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.debugQuads());
+            VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.lines());
 
             matrixStack.pushPose();
             Vec3 cam = camera.getPosition();
             matrixStack.translate(-cam.x, -cam.y, -cam.z);
-            Matrix4f mat = matrixStack.last().pose();
+            //Matrix4f mat = matrixStack.last().pose();
 
             int pRed = partition.getPartitionType() == Partition.PartitionType.HOME ? 220 : 100;
             int pGreen = partition.getPartitionType() == Partition.PartitionType.HOME ? 100 : 220;
 
-            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
-            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+            LevelRenderer.renderLineBox(matrixStack, vertexConsumer, partitionStartPos.getX(), partitionStartPos.getY() + 1.005D, partitionStartPos.getZ(), partitionEndPos.getX(), partitionEndPos.getY() + 1.005D, partitionEndPos.getZ(), 15.9f, 6.6f, 6.6f, 8.5f);
+//            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+//            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionStartPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+//            vertexConsumer.vertex(mat, (float) partitionEndPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
+//            vertexConsumer.vertex(mat, (float) partitionStartPos.getX(), (float) partitionStartPos.getY() + 1.006F, (float) partitionEndPos.getZ()).color(pRed, pGreen, 100, 100).endVertex();
 
             matrixStack.popPose();
+            buffer.endBatch(RenderType.lines());
 
-            buffer.endBatch(RenderType.debugQuads());
+//            buffer.endBatch(RenderType.debugQuads());
         }
 
     }
@@ -150,7 +152,7 @@ public class ZoneRenderer {
             for(var zone: Zone.getZones()) {
                 if (zone != null) {
                     drawZoneBox(event.getPoseStack(), event.getCamera(), zone);
-                    drawZoneHighlight(event.getPoseStack(), event.getCamera(), level, zone);
+                    // drawZoneHighlight(event.getPoseStack(), event.getCamera(), level, zone);
                     drawZonePlots(event.getPoseStack(), event.getCamera(), zone);
                 }
             }

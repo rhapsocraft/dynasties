@@ -5,7 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
@@ -92,6 +94,14 @@ public class Partition {
 
     public void incrementConstructionCursor() {
         this.constructionCursor++;
+
+        // Set dirty
+        Zone parentZone = this.parentPlot.getParentZone();
+        Level level = parentZone.level();
+
+        if (level != null && !level.isClientSide()) {
+            parentZone.save((ServerLevel) level);
+        }
     }
 
     public BlockPos getOrigin() {

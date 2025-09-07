@@ -15,16 +15,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.AnimationState;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.npc.*;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -37,24 +37,37 @@ import net.minecraftforge.fml.DistExecutor;
 import net.tslat.smartbrainlib.api.SmartBrainOwner;
 import net.tslat.smartbrainlib.api.core.BrainActivityGroup;
 import net.tslat.smartbrainlib.api.core.SmartBrainProvider;
+import net.tslat.smartbrainlib.api.core.behaviour.FirstApplicableBehaviour;
+import net.tslat.smartbrainlib.api.core.behaviour.custom.look.LookAtTarget;
 import net.tslat.smartbrainlib.api.core.behaviour.custom.move.MoveToWalkTarget;
+import net.tslat.smartbrainlib.api.core.behaviour.custom.target.SetPlayerLookTarget;
+import net.tslat.smartbrainlib.api.core.behaviour.custom.target.TargetOrRetaliate;
 import net.tslat.smartbrainlib.api.core.sensor.ExtendedSensor;
 import net.tslat.smartbrainlib.api.core.sensor.custom.NearbyItemsSensor;
 import net.tslat.smartbrainlib.api.core.sensor.vanilla.HurtBySensor;
 import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyLivingEntitySensor;
+import net.tslat.smartbrainlib.api.core.sensor.vanilla.NearbyPlayersSensor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class DynastyVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastyVillager>, VillagerDataHolder {
-    private static final EntityDataAccessor<VillagerData> DATA_VILLAGER_DATA;
+public class DynastiesVillager extends AbstractDynastyVillager implements SmartBrainOwner<DynastiesVillager> {
+    private static final EntityDataAccessor<Boolean> IS_FLEEING = SynchedEntityData.defineId(DynastiesVillager.class, EntityDataSerializers.BOOLEAN);
     private static final List<Item> DESIRED_ITEMS;
-    public DynastyVillager(EntityType<DynastyVillager> pEntityType, Level pLevel) {
+
+    public final AnimationState idleAnimationState = new AnimationState();
+    public final AnimationState fleeAnimationState = new AnimationState();
+    public final AnimationState idleFaceAnimationState = new AnimationState();
+
+
+    public DynastiesVillager(EntityType<DynastiesVillager> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
     }
 
-    public DynastyVillager(Level pLevel, Zone homeZone) {
+    public DynastiesVillager(Level pLevel, Zone homeZone) {
         super(pLevel, homeZone);
+        ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
     }
 
     @Override
@@ -73,18 +86,22 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
 
     protected void defineSynchedData() {
         super.defineSynchedData();
-        // TODO: Remove later. Only necessary for visual purposes
-        this.entityData.define(DATA_VILLAGER_DATA, new VillagerData(VillagerType.PLAINS, VillagerProfession.NONE, 1));
+        this.entityData.define(IS_FLEEING, false);
     }
 
     @Override
-    public VillagerData getVillagerData() {
-        return this.entityData.get(DATA_VILLAGER_DATA);
+    public void tick() {
+        if(level().isClientSide()) {
+            this.idleAnimationState.animateWhen(!this.walkAnimation.isMoving(), this.tickCount);
+            this.fleeAnimationState.animateWhen(this.isFleeing(), this.tickCount);
+            this.idleFaceAnimationState.animateWhen(true, this.tickCount);
+        }
+
+        super.tick();
     }
 
-    @Override
-    public void setVillagerData(VillagerData villagerData) {
-        this.entityData.set(DATA_VILLAGER_DATA, villagerData);
+    public boolean isFleeing() {
+        return this.entityData.get(IS_FLEEING);
     }
 
     @Override
@@ -138,7 +155,7 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
     }
 
     @Override
-    public List<? extends ExtendedSensor<? extends DynastyVillager>> getSensors() {
+    public List<? extends ExtendedSensor<? extends DynastiesVillager>> getSensors() {
         return ObjectArrayList.of(
                 new AvailablePlotsSensor<>(),
                 new NearbyLivingEntitySensor<>(),
@@ -147,36 +164,44 @@ public class DynastyVillager extends AbstractDynastyVillager implements SmartBra
                 new AvailableSeedsSensor<>(),
                 new FarmlandsSensor<>(),
                 new FullyGrownCropsSensor<>(),
-                new NearbyItemsSensor<>()
+                new NearbyItemsSensor<>(),
+                new NearbyPlayersSensor<>()
                 //new AvailableTentsSensor<>()
         );
     }
 
     @Override
-    public BrainActivityGroup<DynastyVillager> getIdleTasks() {
+    public BrainActivityGroup<DynastiesVillager> getIdleTasks() {
         return BrainActivityGroup.idleTasks(
                 new ClaimPlot<>(),
                 //new GoHome<>(),
                 //new SleepInTent<>(),
+                new TargetOrRetaliate<>(),
                 new DoConstruction<>(),
-                new ReturnItems<>(),
-                new PickUpItems<>(),
+                new FetchSeeds<>(),
+                new FirstApplicableBehaviour<DynastiesVillager>(new HarvestCrops<>(), new PlantCrops<>()),
                 new StockWares<>()
         );
     }
 
     @Override
-    public BrainActivityGroup<DynastyVillager> getCoreTasks() {
+    public BrainActivityGroup<DynastiesVillager> getCoreTasks() {
         return BrainActivityGroup.coreTasks(
+                new SetPlayerLookTarget<>(),
+                new LookAtTarget<>(),
                 new MoveToWalkTarget<>(),
-                new FetchSeeds<>(),
-                new HarvestCrops<>(),
-                new PlantCrops<>()
+                new FirstApplicableBehaviour<>(new PickUpItems<>(), new ReturnItems<>())
         );
     }
 
+//    @Override
+//    public BrainActivityGroup<DynastiesVillager> getFightTasks() {
+//        return BrainActivityGroup.fightTasks(
+//                new FleeTarget<>().speedModifier(0.5F).whenStarting((entity) -> this.entityData.set(IS_FLEEING, true)).whenStopping((entity) -> this.entityData.set(IS_FLEEING, false))
+//        );
+//    }
+
     static {
-        DATA_VILLAGER_DATA = SynchedEntityData.defineId(DynastyVillager.class, EntityDataSerializers.VILLAGER_DATA);
         DESIRED_ITEMS = List.of(Items.WHEAT, Items.BEETROOT);
     }
 }
