@@ -1,16 +1,17 @@
-License Overview
-Assets License (All Rights Reserved)
+# License Overview
+## Assets License (All Rights Reserved)
+
 All Rights Reserved
 
 Copyright (c) rhapsocraft
 
 This license applies to any files under the following directories:
 
-./src/main/resources/assets/
-./src/main/java/com/maestreaux/dynasties/client/model
-./src/main/java/com/maestreaux/dynasties/client/animation
+- `./src/main/resources/assets/`
+- `./src/main/java/com/maestreaux/dynasties/client/model`
+- `./src/main/java/com/maestreaux/dynasties/client/animation`
 
-Code License (MIT)
+## Code License (MIT)
 All other files are licensed under the MIT License:
 
 MIT License
