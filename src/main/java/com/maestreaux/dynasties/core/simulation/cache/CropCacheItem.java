@@ -71,7 +71,8 @@ public class CropCacheItem extends BlockCacheItem {
             if (age < maxAge) {
                 float speed = getGrowthSpeed(cropBlock, this.cache, this.pos);
                 if (this.level.random.nextInt((int)(25.0F / speed) + 1) == 0) {
-                    this.level.setBlock(this.pos, this.state.setValue(BlockStateProperties.AGE_7, age + 1), 2);
+                    this.state = this.state.setValue(BlockStateProperties.AGE_7, age + 1);
+                    this.setStatus(CacheStatus.PENDING);
                 }
             }
         }

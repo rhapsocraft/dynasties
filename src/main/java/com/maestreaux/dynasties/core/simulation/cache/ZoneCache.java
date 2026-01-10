@@ -108,7 +108,8 @@ public class ZoneCache implements BlockGetter {
         }
     }
 
-    public void removeBlock(BlockPos pos) {
+
+    public void removeCacheItem(BlockPos pos) {
         var cacheItem = this.flatMap.get(pos);
 
         if (cacheItem != null) {
