@@ -1,9 +1,7 @@
 package com.maestreaux.dynasties.core.utils;
 
 import com.maestreaux.dynasties.core.ItemLocation;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;

@@ -6,14 +6,12 @@ import com.maestreaux.dynasties.core.simulation.entity.EntitySimulated;
 import com.maestreaux.dynasties.core.simulation.entity.VillagerEntitySimulated;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CRemoveSimulatedEntity;
-import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

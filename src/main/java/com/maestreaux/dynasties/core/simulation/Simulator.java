@@ -48,13 +48,13 @@ public class Simulator {
                                 if (level.hasChunk(chunk.x, chunk.z)) {
                                     if (cacheItem.getStatus() == BlockCacheItem.CacheStatus.PENDING) {
                                         // Flush pending changes when block's chunk is loaded on the current tick
-                                        cacheItem.applyBlockState();
+                                        cacheItem.flush();
                                         cacheItem.setStatus(BlockCacheItem.CacheStatus.FLUSHED);
                                     }
                                 } else {
                                     // Update cache state if chunk is no longer being loaded/simulated
                                     if (cacheItem.getStatus() == BlockCacheItem.CacheStatus.FLUSHED) {
-                                        cacheItem.cacheBlockState();
+                                        cacheItem.cache();
                                     }
                                 }
                             });

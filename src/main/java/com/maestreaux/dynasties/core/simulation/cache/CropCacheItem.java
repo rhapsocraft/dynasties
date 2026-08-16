@@ -3,18 +3,23 @@ package com.maestreaux.dynasties.core.simulation.cache;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.common.IPlantable;
 
+import java.util.List;
+
 public class CropCacheItem extends BlockCacheItem {
-    public CropCacheItem(ZoneCache cache, BlockPos pos) {
-        super(cache, pos);
+    public CropCacheItem(BlockGetter blockGetter, ServerLevel level, BlockPos pos) {
+        super(blockGetter, level, pos);
     }
 
+    protected boolean isHarvested = false;
     protected float getGrowthSpeed() {
         return 1F;
     }
@@ -60,19 +65,44 @@ public class CropCacheItem extends BlockCacheItem {
         return f;
     }
 
+    public List<ItemStack> harvest() {
+        var result = Block.getDrops(this.state, this.level, this.pos, null);
+        this.state = Blocks.AIR.defaultBlockState();
+        this.isHarvested = true;
+
+        return result;
+    }
+
+    public boolean isMature() {
+        var cropBlock = (CropBlock) this.state.getBlock();
+        var age = cropBlock.getAge(this.state);
+        var maxAge = cropBlock.getMaxAge();
+
+        return age == maxAge;
+    }
+
+    @Override
+    public CropCacheItem collect() {
+        super.collect();
+
+        return this;
+    }
+
     @Override
     public void randomTick() {
-        // Replicated behavior
-        if (this.getLightLevel() >= 9) {
-            var cropBlock = (CropBlock) this.state.getBlock();
-            var age = cropBlock.getAge(this.state);
-            var maxAge = cropBlock.getMaxAge();
+        if (!this.isHarvested) {
+            // Replicated behavior
+            if (this.getLightLevel() >= 9) {
+                var cropBlock = (CropBlock) this.state.getBlock();
+                var age = cropBlock.getAge(this.state);
+                var maxAge = cropBlock.getMaxAge();
 
-            if (age < maxAge) {
-                float speed = getGrowthSpeed(cropBlock, this.cache, this.pos);
-                if (this.level.random.nextInt((int)(25.0F / speed) + 1) == 0) {
-                    this.state = this.state.setValue(BlockStateProperties.AGE_7, age + 1);
-                    this.setStatus(CacheStatus.PENDING);
+                if (age < maxAge) {
+                    float speed = getGrowthSpeed(cropBlock, this.blockGetter, this.pos);
+                    if (this.level.random.nextInt((int)(25.0F / speed) + 1) == 0) {
+                        this.state = this.state.setValue(BlockStateProperties.AGE_7, age + 1);
+                        this.setStatus(CacheStatus.PENDING);
+                    }
                 }
             }
         }

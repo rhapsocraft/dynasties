@@ -300,6 +300,7 @@ public class DynastiesVillager extends AbstractDynastyVillager implements SmartB
 //        );
 //    }
 
+    // TODO: Make this configurable instead of hardcoded
     static {
         DESIRED_ITEMS = List.of(
                 Items.WHEAT,

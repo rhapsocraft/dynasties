@@ -1,6 +1,11 @@
 package com.maestreaux.dynasties.core.simulation.entity;
 
 import com.maestreaux.dynasties.core.simulation.SimulationState;
+import com.maestreaux.dynasties.core.simulation.ai.IAgent;
+import com.maestreaux.dynasties.core.simulation.ai.IAgentMemory;
+import com.maestreaux.dynasties.core.simulation.ai.behavior.IAgentBehavior;
+import com.maestreaux.dynasties.core.simulation.ai.sensor.BaseAgentSensor;
+import com.maestreaux.dynasties.core.simulation.ai.sensor.IAgentSensor;
 import com.maestreaux.dynasties.network.PacketHandler;
 import com.maestreaux.dynasties.network.message.CUpdateSimulatedEntity;
 import net.minecraft.core.BlockPos;
@@ -13,9 +18,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 
-import java.util.UUID;
+import java.util.*;
 
-public class EntitySimulated<T extends Entity> {
+public class EntitySimulated<T extends Entity> implements IAgent {
     public static StreamCodec<RegistryFriendlyByteBuf, EntitySimulated<?>> STREAM_CODEC;
 
     protected BlockPos pos;
@@ -26,8 +31,11 @@ public class EntitySimulated<T extends Entity> {
     protected CompoundTag entitySavedData = new CompoundTag();
     protected SimulatedEntityType type;
 
+    protected Map<Class<? extends BaseAgentSensor<?,?>>, IAgentSensor<?>> agentSensorsMap = new HashMap<>();
+    protected Map<Class<? extends IAgentMemory<?>>, IAgentMemory<?>> agentMemories = new HashMap<>();
+
     // TODO: Potential bug if entity can potentially die, but is somehow unloaded before dying, causing it to continue being simulated when they would have died instead.
-    // Possible solution: Force chunks to remain loaded after some time around an entity that is "in danger" (taking damage, falling)
+    // Possible solution: Force chunks to remain loaded after some time around an entity that is "in danger" (taking damage, on fire, falling)
     // It is planned that chunks will be loaded around entities that are in combat even if there are no players nearby.
 
     public EntitySimulated(ServerLevel level) {
@@ -98,6 +106,8 @@ public class EntitySimulated<T extends Entity> {
             // Simulated Entity is no longer being ticked
             this.syncFromEntity();
         }
+
+        this.tickAI();
     }
 
     public boolean isEntityTicking() {
@@ -172,6 +182,54 @@ public class EntitySimulated<T extends Entity> {
 
             PacketHandler.sendToAll(new CUpdateSimulatedEntity(this));
         }
+    }
+
+    @Override
+    public void tickAI() {
+        var sensors = this.getSensors();
+
+        // Tick sensors
+        for (var sensor: sensors) {
+            sensor.update(this.level);
+        }
+
+        var behaviors = this.getBehaviors();
+
+        // Tick behaviors
+        for (var behavior : behaviors) {
+            if (behavior.canStart()) {
+                behavior.start();
+            }
+
+            if (behavior.canTick()) {
+                behavior.tick();
+            }
+        }
+    }
+
+    @Override
+    public ServerLevel getLevel() {
+        return null;
+    }
+
+    @Override
+    public List<IAgentBehavior> getBehaviors() {
+        return List.of();
+    }
+
+    @Override
+    public List<IAgentSensor<?>> getSensors() {
+        return this.agentSensorsMap.values().stream().toList();
+    }
+
+    @Override
+    public <S extends BaseAgentSensor<?, ?>> S getSensor(Class<S> cls) {
+        return cls.cast(this.agentSensorsMap.get(cls));
+    }
+
+    @Override
+    public <M extends IAgentMemory<?>> M getMemory(Class<M> cls) {
+        return cls.cast(this.agentMemories.get(cls));
     }
 
     // TODO: Use new registry

@@ -1,5 +1,6 @@
 package com.maestreaux.dynasties.core.simulation.cache;
 
+import com.maestreaux.dynasties.core.simulation.cache.inventory.InventoryCacheItem;
 import com.maestreaux.dynasties.world.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -22,9 +23,11 @@ public class ZoneCache implements BlockGetter {
     private final Zone zone;
     private final ServerLevel level;
 
-    private final Map<CacheCategory, Map<BlockPos, BlockCacheItem>> indexedCache = new HashMap<>();
-    private final Map<BlockPos, BlockCacheItem> flatMap = new HashMap<>();
+    private final Map<CacheCategory, Map<BlockPos, BlockCacheItem>> blockCategoryCache = new HashMap<>();
+    private final Map<BlockPos, BlockCacheItem> flatBlockMap = new HashMap<>();
     private final Map<Long, Set<BlockPos>> positionsByChunk = new HashMap<>();
+
+    private final Map<BlockPos, InventoryCacheItem> inventoryCache = new HashMap<>();
 
     // Chunks
     private final Set<ChunkPos> chunks =  new HashSet<>();
@@ -74,6 +77,8 @@ public class ZoneCache implements BlockGetter {
 
     public Set<ChunkPos> getChunks() { return this.chunks; }
 
+    public List<InventoryCacheItem> getInventories() { return this.inventoryCache.values().stream().toList(); }
+
     public void indexBlocks(AABB boundingBox) {
         var positions = BlockPos.betweenClosedStream(boundingBox);
 
@@ -92,52 +97,56 @@ public class ZoneCache implements BlockGetter {
         var newPos = new BlockPos(pos);
         var state = this.level.getBlockState(newPos);
 
-        BlockCacheItem cacheItem = null;
+        BlockEntity blockEntity = this.level.getBlockEntity(pos);
 
-        if (state.is(Blocks.FARMLAND)) {
-            cacheItem = new BlockCacheItem(this, newPos);
-            indexedCache.computeIfAbsent(CacheCategory.FARMLAND, key -> new HashMap<>()).put(newPos, cacheItem);
-        } else if (state.getBlock() instanceof CropBlock) {
-            cacheItem = new CropCacheItem(this, newPos);
-            indexedCache.computeIfAbsent(CacheCategory.CROP, key -> new HashMap<>()).put(newPos, cacheItem);
-        }
+        if (blockEntity == null) {
+            BlockCacheItem cacheItem = null;
 
-        if (cacheItem != null) {
-            this.flatMap.put(newPos, cacheItem);
+            // TODO: Implement Cache Handler
+            if (state.is(Blocks.FARMLAND)) {
+                cacheItem = new BlockCacheItem(this, this.level, newPos);
+                this.blockCategoryCache.computeIfAbsent(CacheCategory.FARMLAND, key -> new HashMap<>()).put(newPos, cacheItem);
+            } else if (state.getBlock() instanceof CropBlock) {
+                cacheItem = new CropCacheItem(this, this.level, newPos);
+                this.blockCategoryCache.computeIfAbsent(CacheCategory.CROP, key -> new HashMap<>()).put(newPos, cacheItem);
+            }
+
+            if (cacheItem != null) {
+                this.flatBlockMap.put(newPos, cacheItem);
+                this.positionsByChunk.computeIfAbsent(ChunkPos.asLong(newPos), (posLong) -> new HashSet<>()).add(newPos);
+            }
+        } else {
+            var inventoryCacheItem = new InventoryCacheItem(newPos, this.level);
+            this.inventoryCache.put(newPos, inventoryCacheItem);
+
             this.positionsByChunk.computeIfAbsent(ChunkPos.asLong(newPos), (posLong) -> new HashSet<>()).add(newPos);
         }
-    }
 
-
-    public void removeCacheItem(BlockPos pos) {
-        var cacheItem = this.flatMap.get(pos);
-
-        if (cacheItem != null) {
-            cacheItem.state = Blocks.AIR.defaultBlockState();
-        }
     }
 
     public void deleteCacheItem(BlockPos pos) {
-        this.flatMap.remove(pos);
+        this.flatBlockMap.remove(pos);
         this.positionsByChunk.getOrDefault(ChunkPos.asLong(pos), new HashSet<>()).remove(pos);
 
-        for (var subMap : this.indexedCache.values()) {
+        for (var subMap : this.blockCategoryCache.values()) {
             if (subMap.remove(pos) != null) {
                 break;
             }
         }
     }
 
-    public Map<BlockPos, BlockCacheItem> getIndexedCacheMap(CacheCategory category) {
-        return this.indexedCache.get(category);
+    @SuppressWarnings("unchecked")
+    public <T extends ICacheItem> Map<BlockPos, T> getIndexedCacheMap(CacheCategory category) {
+        var cacheMap = this.blockCategoryCache.get(category);
+        return (Map<BlockPos, T>) cacheMap;
     }
 
     public Map<BlockPos, BlockCacheItem> getCacheMap() {
-        return this.flatMap;
+        return this.flatBlockMap;
     }
 
     public List<BlockPos> getAllPos() {
-        return this.indexedCache.values().stream().flatMap(map -> map.keySet().stream()).toList();
+        return this.blockCategoryCache.values().stream().flatMap(map -> map.keySet().stream()).toList();
     }
 
     @Override
@@ -147,7 +156,7 @@ public class ZoneCache implements BlockGetter {
 
     @Override
     public @NotNull BlockState getBlockState(BlockPos blockPos) {
-        var cacheItem = this.flatMap.get(blockPos);
+        var cacheItem = this.flatBlockMap.get(blockPos);
 
         return cacheItem == null ? Blocks.AIR.defaultBlockState() : cacheItem.state;
     }
@@ -167,8 +176,20 @@ public class ZoneCache implements BlockGetter {
         return this.level.getMinY();
     }
 
-    public enum CacheCategory {
-        CROP,
-        FARMLAND
+    interface TypedKey<T> {
+        Class<? extends T> getType();
+    }
+
+    public enum CacheCategory implements TypedKey<ICacheItem> {
+        CROP(CropCacheItem.class),
+        FARMLAND(BlockCacheItem.class);
+
+        private final Class<? extends ICacheItem> type;
+        CacheCategory(Class<? extends ICacheItem> type) { this.type = type; }
+
+        @Override
+        public Class<? extends ICacheItem> getType() {
+            return type;
+        }
     }
 }

@@ -68,6 +68,7 @@ public class Zone {
         }
     }
 
+    // TODO: Optimize
     public static Zone getContainerZone(ServerLevel level, Vec3i pos) {
         var zoneMatch = ZoneSavedData.getZones(level).stream().filter((zone) -> zone.getBoundingBox().contains(pos.getX(), pos.getY(), pos.getZ())).findFirst();
         return zoneMatch.orElse(null);
